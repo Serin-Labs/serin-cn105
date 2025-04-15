@@ -1,0 +1,62 @@
+climate:
+- platform: cn105
+  id: hp
+  name: ${friendly_name}
+  icon: mdi:heat-pump
+  visual:
+    min_temperature: 15
+    max_temperature: 31
+    temperature_step:
+      target_temperature: 1
+      current_temperature: 0.5
+  remote_temperature_timeout: 30min
+  update_interval: 2s
+  debounce_delay: 100ms
+  vertical_vane_select:
+    icon: mdi:swap-vertical
+    name: Vertical Vane
+  horizontal_vane_select:
+    icon: mdi:swap-horizontal
+    name: Horizontal Vane
+  supports:
+    mode: [COOL, HEAT, FAN_ONLY, DRY]
+    fan_mode: [AUTO, QUIET, LOW, MEDIUM, HIGH]
+  # Uncomment the following lines to enable additional sensors
+  # compressor_frequency_sensor:
+  #   name: Compressor Frequency
+  #   entity_category: diagnostic
+  #   disabled_by_default: true    
+  # outside_air_temperature_sensor:
+  #   name: Outside Air Temp
+  #   disabled_by_default: true
+  # vertical_vane_select:
+  #   name: Vertical Vane
+  #   disabled_by_default: false
+  # horizontal_vane_select:
+  #   name: Horizontal Vane
+  #   disabled_by_default: true
+  # isee_sensor:
+  #   name: ISEE Sensor
+  #   disabled_by_default: true
+  # stage_sensor:
+  #   name: Stage
+  #   entity_category: diagnostic
+  #   disabled_by_default: true
+  # sub_mode_sensor:
+  #   name: Sub Mode
+  #   entity_category: diagnostic
+  #   disabled_by_default: true
+  # auto_sub_mode_sensor:
+  #   name: Auto Sub Mode
+  #   entity_category: diagnostic
+  #   disabled_by_default: true
+  # input_power_sensor:
+  #   name: Input Power
+  #   disabled_by_default: true
+  # kwh_sensor:
+  #   name: Energy Usage
+  #   disabled_by_default: true
+  # runtime_hours_sensor:
+  #   name: Runtime Hours
+  #   entity_category: diagnostic
+  #   disabled_by_default: true

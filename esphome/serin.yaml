@@ -1,0 +1,30 @@
+substitutions:
+  name: serin-cn105
+  friendly_name: "Serin Heat Pump Controller"
+  # remote_temp_sensor: sensor.my_room_temperature  # Uncomment and set if using remote_temp
+
+logger:
+  level: INFO
+
+api:
+
+ota:
+
+dashboard_import:
+  package_import_url: github://akifbayram/MitsubishiCN105ESPHome/atoms3/serin.yaml
+  import_full_config: false
+
+external_components:
+  - source: github://akifbayram/MitsubishiCN105ESPHome
+
+packages:
+  # Select ONLY ONE board type below by uncommenting the appropriate line:
+  esp32s3: github://Serin-Labs/serin-cn105/esphome/common/esp32s3.yaml
+  # esp32c6: github://Serin-Labs/serin-cn105/esphome/common/esp32c6.yaml
+
+  cn105: github://Serin-Labs/serin-cn105/esphome/common/cn105.yaml
+  wifi: github://Serin-Labs/serin-cn105/esphome/common/wifi.yaml
+  web_server: github://Serin-Labs/serin-cn105/esphome/common/web_server.yaml
+
+  # To enable remote temperature sensor, uncomment the line below and set remote_temp_sensor above
+  # remote_temp: github://Serin-Labs/serin-cn105/esphome/common/remote_temp.yaml
