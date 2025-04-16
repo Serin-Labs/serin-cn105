@@ -5,3 +5,5 @@ wifi:
     password: "serinsetup"
 
 captive_portal:
+
+improv_serial:
