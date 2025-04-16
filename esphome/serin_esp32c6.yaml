@@ -12,17 +12,14 @@ ota:
   - platform: esphome
 
 dashboard_import:
-  package_import_url: github://akifbayram/MitsubishiCN105ESPHome/atoms3/serin.yaml
+  package_import_url: github://Serin-Labs/serin-cn105/esphome/serin.yaml
   import_full_config: false
 
 external_components:
   - source: github://akifbayram/MitsubishiCN105ESPHome
 
 packages:
-  # Select ONLY ONE board type below by uncommenting the appropriate line:
-  esp32s3: github://Serin-Labs/serin-cn105/esphome/common/esp32s3.yaml
-  # esp32c6: github://Serin-Labs/serin-cn105/esphome/common/esp32c6.yaml
-
+  esp32c6: github://Serin-Labs/serin-cn105/esphome/common/esp32c6.yaml
   cn105: github://Serin-Labs/serin-cn105/esphome/common/cn105.yaml
   wifi: github://Serin-Labs/serin-cn105/esphome/common/wifi.yaml
   web_server: github://Serin-Labs/serin-cn105/esphome/common/web_server.yaml
