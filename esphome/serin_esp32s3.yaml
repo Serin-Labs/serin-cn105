@@ -12,7 +12,7 @@ ota:
   - platform: esphome
 
 dashboard_import:
-  package_import_url: github://Serin-Labs/serin-cn105/esphome/serin.yaml
+  package_import_url: github://Serin-Labs/serin-cn105/esphome/serin_esp32s3.yaml
   import_full_config: false
 
 external_components:
