@@ -9,6 +9,7 @@ logger:
 api:
 
 ota:
+  - platform: esphome
 
 dashboard_import:
   package_import_url: github://akifbayram/MitsubishiCN105ESPHome/atoms3/serin.yaml
