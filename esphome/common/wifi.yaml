@@ -7,3 +7,23 @@ wifi:
 captive_portal:
 
 improv_serial:
+
+sensor:
+  - platform: wifi_signal
+    name: Signal dB
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: diagnostic
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: IP
+    ssid:
+      name: SSID
+  - platform: version
+    name: ESPHome Version
+    hide_timestamp: true
+    disabled_by_default: false
+    icon: mdi:new-box
+    entity_category: diagnostic
