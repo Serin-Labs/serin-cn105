@@ -29,12 +29,6 @@ climate:
   # outside_air_temperature_sensor:
   #   name: Outside Air Temp
   #   disabled_by_default: true
-  # vertical_vane_select:
-  #   name: Vertical Vane
-  #   disabled_by_default: false
-  # horizontal_vane_select:
-  #   name: Horizontal Vane
-  #   disabled_by_default: true
   # isee_sensor:
   #   name: ISEE Sensor
   #   disabled_by_default: true

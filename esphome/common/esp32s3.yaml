@@ -17,3 +17,68 @@ uart:
   baud_rate: 2400
   tx_pin: GPIO1
   rx_pin: GPIO2
+  
+sensor:
+  - platform: uptime
+    name: Uptime
+    disabled_by_default: false
+    force_update: false
+    unit_of_measurement: s
+    icon: mdi:timer-outline
+    accuracy_decimals: 0
+    device_class: duration
+    state_class: total_increasing
+    update_interval: 60s
+    internal: true
+
+output:
+  - platform: template
+    id: status_output
+    type: binary
+    write_action:
+    - if:
+        condition:
+          lambda: return (state);
+        then:
+          - light.turn_on:
+              id: led
+              brightness: 70%
+              red: 100%
+              green: 0%
+              blue: 0% 
+        else:
+          - light.turn_off: led
+
+remote_transmitter:
+  pin: GPIO4
+  carrier_duty_percent: 50%
+
+light:
+  - platform: status_led
+    output: status_output
+    name: "Status Led"
+    internal: True
+
+  - platform: esp32_rmt_led_strip
+    rgb_order: GRB
+    pin: 35
+    num_leds: 4
+    rmt_channel: 1
+    chipset: ws2812
+    id: led
+    name: "Led"
+
+binary_sensor:
+  - platform: gpio
+    name: Button
+    pin:
+      number: GPIO41
+      inverted: true
+      mode:
+        input: true
+        pullup: true
+    filters:
+      - delayed_off: 10ms
+    on_press:
+      then:
+        - logger.log: Button Pressed

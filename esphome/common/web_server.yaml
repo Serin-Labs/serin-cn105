@@ -1,15 +1,2 @@
 web_server:
   version: 3
-
-sensor:
-- platform: uptime
-  name: Uptime
-  disabled_by_default: false
-  force_update: false
-  unit_of_measurement: s
-  icon: mdi:timer-outline
-  accuracy_decimals: 0
-  device_class: duration
-  state_class: total_increasing
-  update_interval: 60s
-  internal: true
