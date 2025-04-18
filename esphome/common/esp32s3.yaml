@@ -31,34 +31,7 @@ sensor:
     update_interval: 60s
     internal: true
 
-output:
-  - platform: template
-    id: status_output
-    type: binary
-    write_action:
-    - if:
-        condition:
-          lambda: return (state);
-        then:
-          - light.turn_on:
-              id: led
-              brightness: 70%
-              red: 100%
-              green: 0%
-              blue: 0% 
-        else:
-          - light.turn_off: led
-
-remote_transmitter:
-  pin: GPIO4
-  carrier_duty_percent: 50%
-
 light:
-  - platform: status_led
-    output: status_output
-    name: "Status Led"
-    internal: True
-
   - platform: esp32_rmt_led_strip
     rgb_order: GRB
     pin: 35
