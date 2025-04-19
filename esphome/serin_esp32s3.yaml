@@ -19,10 +19,10 @@ external_components:
   - source: github://akifbayram/MitsubishiCN105ESPHome
 
 packages:
-  esp32s3: github://Serin-Labs/serin-cn105/esphome/common/esp32s3.yaml
-  cn105: github://Serin-Labs/serin-cn105/esphome/common/cn105.yaml
-  wifi: github://Serin-Labs/serin-cn105/esphome/common/wifi.yaml
-  web_server: github://Serin-Labs/serin-cn105/esphome/common/web_server.yaml
+  esp32s3: !include common/esp32s3.yaml
+  cn105: !include common/cn105.yaml
+  wifi: !include common/wifi.yaml
+  web_server: !include common/web_server.yaml
 
   # To enable remote temperature sensor, uncomment the line below and set remote_temp_sensor above
-  # remote_temp: github://Serin-Labs/serin-cn105/esphome/common/remote_temp.yaml
+  # remote_temp: !include common/remote_temp.yaml
