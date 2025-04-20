@@ -41,7 +41,7 @@ sensor:
     device_class: duration
     state_class: total_increasing
     update_interval: 60s
-    internal: true
+    internal: false
 
 light:
   - platform: esp32_rmt_led_strip
