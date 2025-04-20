@@ -36,7 +36,6 @@ light:
     rgb_order: GRB
     pin: 35
     num_leds: 4
-    rmt_channel: 1
     chipset: ws2812
     id: led
     name: "Led"
