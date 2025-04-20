@@ -43,6 +43,17 @@ sensor:
     update_interval: 60s
     internal: false
 
+power_supply:
+  - id: 'rgbpwr'
+    enable_on_boot: true
+    pin: GPIO19
+    enable_time: 10ms
+    keep_on_time: 10ms
+    
+button:
+  - platform: restart
+    icon: mdi:power-cycle
+    name: "ESP Reboot"
 light:
   - platform: esp32_rmt_led_strip
     rgb_order: GRB

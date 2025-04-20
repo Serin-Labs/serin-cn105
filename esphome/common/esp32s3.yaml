@@ -40,6 +40,11 @@ light:
     id: led
     name: "Led"
 
+button:
+  - platform: restart
+    icon: mdi:power-cycle
+    name: "ESP Reboot"
+
 binary_sensor:
   - platform: gpio
     name: Button
