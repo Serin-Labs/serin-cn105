@@ -79,3 +79,4 @@ binary_sensor:
         - logger.log: Button Pressed
 
 # bluetooth_proxy:
+#  id: bluetooth_proxy
