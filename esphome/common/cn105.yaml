@@ -9,40 +9,46 @@ climate:
     temperature_step:
       target_temperature: 1
       current_temperature: 0.5
-  remote_temperature_timeout: 30min
   update_interval: 2s
   debounce_delay: 100ms
+  remote_temperature_timeout: 30min
+  # connection_bootstrap_delay: 10s
+  # remote_temperature_keepalive_interval: 20s
+  # installer_mode: false
+  # fahrenheit_compatibility: disabled  # disabled, standard, alt
+
+  # --- Vane Controls ---
   vertical_vane_select:
-    icon: mdi:swap-vertical
     name: Vertical Vane
+    icon: mdi:swap-vertical
   horizontal_vane_select:
-    icon: mdi:swap-horizontal
     name: Horizontal Vane
+    icon: mdi:swap-horizontal
+  # airflow_control_select:
+  #   name: Airflow Control
+  #   icon: mdi:air-filter
+
   supports:
-    mode: [COOL, HEAT, FAN_ONLY, DRY]
-    fan_mode: [AUTO, QUIET, LOW, MEDIUM, HIGH]
-  # Uncomment the following lines to enable additional sensors
+    mode: [AUTO, COOL, HEAT, FAN_ONLY, DRY]
+    fan_mode: [AUTO, QUIET, LOW, MEDIUM, MIDDLE, HIGH]
+    # swing_mode: [OFF, VERTICAL, HORIZONTAL, BOTH]
+    # dual_setpoint: false
+
+  # --- Switches ---
+  # night_mode_switch:
+  #   name: Night Mode
+  # air_purifier_switch:
+  #   name: Air Purifier
+  # circulator_switch:
+  #   name: Circulator
+
+  # --- Sensors ---
   # compressor_frequency_sensor:
   #   name: Compressor Frequency
   #   entity_category: diagnostic
-  #   disabled_by_default: true    
+  #   disabled_by_default: true
   # outside_air_temperature_sensor:
   #   name: Outside Air Temp
-  #   disabled_by_default: true
-  # isee_sensor:
-  #   name: ISEE Sensor
-  #   disabled_by_default: true
-  # stage_sensor:
-  #   name: Stage
-  #   entity_category: diagnostic
-  #   disabled_by_default: true
-  # sub_mode_sensor:
-  #   name: Sub Mode
-  #   entity_category: diagnostic
-  #   disabled_by_default: true
-  # auto_sub_mode_sensor:
-  #   name: Auto Sub Mode
-  #   entity_category: diagnostic
   #   disabled_by_default: true
   # input_power_sensor:
   #   name: Input Power
@@ -54,3 +60,61 @@ climate:
   #   name: Runtime Hours
   #   entity_category: diagnostic
   #   disabled_by_default: true
+  # hp_uptime_connection_sensor:
+  #   name: HP Uptime
+  #   entity_category: diagnostic
+  #   disabled_by_default: true
+
+  # --- Binary Sensors ---
+  # isee_sensor:
+  #   name: ISEE Sensor
+  #   disabled_by_default: true
+
+  # --- Text Sensors ---
+  # stage_sensor:
+  #   name: Stage
+  #   entity_category: diagnostic
+  #   disabled_by_default: true
+  #   use_as_operating_fallback: false
+  # sub_mode_sensor:
+  #   name: Sub Mode
+  #   entity_category: diagnostic
+  #   disabled_by_default: true
+  # auto_sub_mode_sensor:
+  #   name: Auto Sub Mode
+  #   entity_category: diagnostic
+  #   disabled_by_default: true
+
+  # --- ISU Function Controls ---
+  # functions_get_button:
+  #   name: Functions Get
+  #   entity_category: config
+  # functions_set_button:
+  #   name: Functions Set
+  #   entity_category: config
+  # functions_set_code:
+  #   name: Function Code
+  #   entity_category: config
+  # functions_set_value:
+  #   name: Function Value
+  #   entity_category: config
+  # functions_sensor:
+  #   name: Functions
+  #   entity_category: diagnostic
+  #   disabled_by_default: true
+
+  # --- Hardware Settings (ISU Codes) ---
+  # hardware_settings:
+  #   update_interval: 24h
+  #   list:
+  #     - code: 101
+  #       name: "Auto Restart"
+  #       options:
+  #         1: "ON"
+  #         2: "OFF"
+  #     - code: 102
+  #       name: "Temperature Source"
+  #       options:
+  #         1: "Indoor"
+  #         2: "Remote"
+  #         3: "External/CN105"
