@@ -51,18 +51,24 @@ jobs:
 
       - name: Find build artifacts
         id: build-dir
+        env:
+          CONFIG: ${{ matrix.config }}
         run: |
-          echo "=== All .bin files in build directory ==="
-          find .esphome/build -name "*.bin" -type f
+          # ESPHome creates .esphome/ in the config file's directory
+          CONFIG_DIR=$(dirname "$CONFIG")
+          BUILD_ROOT="${CONFIG_DIR}/.esphome/build"
 
-          BOOTLOADER=$(find .esphome/build -name "bootloader.bin" -type f | head -1)
-          PARTITIONS=$(find .esphome/build \( -name "partition-table.bin" -o -name "partitions.bin" \) -type f | head -1)
+          echo "=== All .bin files under ${BUILD_ROOT} ==="
+          find "$BUILD_ROOT" -name "*.bin" -type f
+
+          BOOTLOADER=$(find "$BUILD_ROOT" -name "bootloader.bin" -type f | head -1)
+          PARTITIONS=$(find "$BUILD_ROOT" \( -name "partition-table.bin" -o -name "partitions.bin" \) -type f | head -1)
           # Try "firmware.bin" (PlatformIO) first, then device-named bin (native ESP-IDF)
-          FIRMWARE=$(find .esphome/build -name "firmware.bin" -type f | head -1)
+          FIRMWARE=$(find "$BUILD_ROOT" -name "firmware.bin" -type f | head -1)
           if [ -z "$FIRMWARE" ]; then
-            BUILD_DIR=$(find .esphome/build -maxdepth 1 -mindepth 1 -type d | head -1)
-            DEVICE_NAME=$(basename "$BUILD_DIR")
-            FIRMWARE=$(find "$BUILD_DIR" -maxdepth 2 -name "${DEVICE_NAME}.bin" -type f | head -1)
+            DEV_DIR=$(find "$BUILD_ROOT" -maxdepth 1 -mindepth 1 -type d | head -1)
+            DEVICE_NAME=$(basename "$DEV_DIR")
+            FIRMWARE=$(find "$DEV_DIR" -maxdepth 2 -name "${DEVICE_NAME}.bin" -type f | head -1)
           fi
 
           if [ -z "$BOOTLOADER" ] || [ -z "$PARTITIONS" ] || [ -z "$FIRMWARE" ]; then
