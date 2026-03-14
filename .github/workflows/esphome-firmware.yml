@@ -52,10 +52,24 @@ jobs:
       - name: Find build artifacts
         id: build-dir
         run: |
-          # ESP-IDF builds output to different paths than Arduino
-          BOOTLOADER=$(find .esphome/build -name "bootloader.bin" | head -1)
-          PARTITIONS=$(find .esphome/build -name "partition-table.bin" -o -name "partitions.bin" | head -1)
-          FIRMWARE=$(find .esphome/build -name "firmware.bin" | head -1)
+          echo "=== All .bin files in build directory ==="
+          find .esphome/build -name "*.bin" -type f
+
+          BOOTLOADER=$(find .esphome/build -name "bootloader.bin" -type f | head -1)
+          PARTITIONS=$(find .esphome/build \( -name "partition-table.bin" -o -name "partitions.bin" \) -type f | head -1)
+          # Try "firmware.bin" (PlatformIO) first, then device-named bin (native ESP-IDF)
+          FIRMWARE=$(find .esphome/build -name "firmware.bin" -type f | head -1)
+          if [ -z "$FIRMWARE" ]; then
+            BUILD_DIR=$(find .esphome/build -maxdepth 1 -mindepth 1 -type d | head -1)
+            DEVICE_NAME=$(basename "$BUILD_DIR")
+            FIRMWARE=$(find "$BUILD_DIR" -maxdepth 2 -name "${DEVICE_NAME}.bin" -type f | head -1)
+          fi
+
+          if [ -z "$BOOTLOADER" ] || [ -z "$PARTITIONS" ] || [ -z "$FIRMWARE" ]; then
+            echo "::error::Missing build artifacts: bootloader=${BOOTLOADER} partitions=${PARTITIONS} firmware=${FIRMWARE}"
+            exit 1
+          fi
+
           echo "bootloader=${BOOTLOADER}" >> "$GITHUB_OUTPUT"
           echo "partitions=${PARTITIONS}" >> "$GITHUB_OUTPUT"
           echo "firmware=${FIRMWARE}" >> "$GITHUB_OUTPUT"
