@@ -5,7 +5,6 @@ substitutions:
 
 logger:
   level: INFO
-  baud_rate: 0
 
 api:
 

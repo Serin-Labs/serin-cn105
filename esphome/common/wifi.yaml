@@ -5,6 +5,8 @@ wifi:
 
 captive_portal:
 
+improv_serial:
+
 sensor:
   - platform: wifi_signal
     name: Signal dB
