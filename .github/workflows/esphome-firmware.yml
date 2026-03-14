@@ -1,0 +1,132 @@
+# ESPHome Firmware Release
+#
+# Builds ESPHome firmware for all supported boards and commits
+# merged binaries to firmware/esphome/ for ESP Web Tools flashing.
+#
+# Triggers:
+#   - Push to esphome/ configs on main
+#   - Manual dispatch
+
+name: ESPHome Firmware Release
+
+on:
+  push:
+    paths:
+      - 'esphome/**'
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - config: esphome/serin_esp32s3.yaml
+            name: m5atoms3lite
+            chip: esp32s3
+            framework: arduino
+          - config: esphome/serin_esp32c6.yaml
+            name: nanoc6
+            chip: esp32c6
+            framework: esp-idf
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install ESPHome
+        run: pip install esphome
+
+      - name: Compile firmware
+        env:
+          CONFIG: ${{ matrix.config }}
+        run: esphome compile "$CONFIG"
+
+      - name: Create merged firmware binary
+        env:
+          CHIP: ${{ matrix.chip }}
+          NAME: ${{ matrix.name }}
+          FRAMEWORK: ${{ matrix.framework }}
+        run: |
+          BUILD_DIR=".esphome/build/serin-cn105/.pioenvs/serin-cn105"
+
+          if [[ "$FRAMEWORK" == "arduino" ]]; then
+            BOOT_APP0=$(find ~/.platformio -name "boot_app0.bin" -path "*/partitions/*" 2>/dev/null | head -1)
+            esptool.py --chip "${CHIP}" merge_bin \
+              -o "${NAME}.bin" \
+              --flash_mode dio --flash_freq 80m --flash_size 4MB \
+              0x0000 "${BUILD_DIR}/bootloader.bin" \
+              0x8000 "${BUILD_DIR}/partitions.bin" \
+              0xe000 "${BOOT_APP0}" \
+              0x10000 "${BUILD_DIR}/firmware.bin"
+          else
+            esptool.py --chip "${CHIP}" merge_bin \
+              -o "${NAME}.bin" \
+              --flash_mode dio --flash_freq 80m --flash_size 4MB \
+              0x0000 "${BUILD_DIR}/bootloader.bin" \
+              0x8000 "${BUILD_DIR}/partitions.bin" \
+              0x10000 "${BUILD_DIR}/firmware.bin"
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ matrix.name }}
+          path: ${{ matrix.name }}.bin
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all firmware artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: firmware-*
+          path: artifacts/
+
+      - name: Deploy firmware files
+        run: |
+          rm -f firmware/esphome/*.bin
+          cp artifacts/firmware-m5atoms3lite/m5atoms3lite.bin firmware/esphome/
+          cp artifacts/firmware-nanoc6/nanoc6.bin firmware/esphome/
+
+      - name: Generate manifest.json
+        run: |
+          cat > firmware/esphome/manifest.json << 'EOF'
+          {
+            "name": "Serin ESPHome",
+            "builds": [
+              {
+                "chipFamily": "ESP32-S3",
+                "parts": [
+                  { "path": "m5atoms3lite.bin", "offset": 0 }
+                ]
+              },
+              {
+                "chipFamily": "ESP32-C6",
+                "parts": [
+                  { "path": "nanoc6.bin", "offset": 0 }
+                ]
+              }
+            ]
+          }
+          EOF
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add firmware/esphome/
+          git diff --staged --quiet || (git commit -m "chore: update esphome firmware binaries" && git push)

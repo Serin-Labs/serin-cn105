@@ -1,0 +1,17 @@
+{
+  "name": "Serin ESPHome",
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        { "path": "m5atoms3lite.bin", "offset": 0 }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-C6",
+      "parts": [
+        { "path": "nanoc6.bin", "offset": 0 }
+      ]
+    }
+  ]
+}
