@@ -1,0 +1,43 @@
+{
+  "name": "Mitsubishi HomeKit Controller",
+  "version": "0.0.1",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-C6",
+      "parts": [
+        { "path": "nanoc6/bootloader.bin", "offset": 0 },
+        { "path": "nanoc6/partitions.bin", "offset": 32768 },
+        { "path": "nanoc6/boot_app0.bin", "offset": 57344 },
+        { "path": "nanoc6/firmware.bin", "offset": 65536 }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-S3",
+      "parts": [
+        { "path": "m5atoms3-lite/bootloader.bin", "offset": 0 },
+        { "path": "m5atoms3-lite/partitions.bin", "offset": 32768 },
+        { "path": "m5atoms3-lite/boot_app0.bin", "offset": 57344 },
+        { "path": "m5atoms3-lite/firmware.bin", "offset": 65536 }
+      ]
+    },
+    {
+      "chipFamily": "ESP32",
+      "parts": [
+        { "path": "esp32-devkit/bootloader.bin", "offset": 4096 },
+        { "path": "esp32-devkit/partitions.bin", "offset": 32768 },
+        { "path": "esp32-devkit/boot_app0.bin", "offset": 57344 },
+        { "path": "esp32-devkit/firmware.bin", "offset": 65536 }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        { "path": "esp32c3-mini/bootloader.bin", "offset": 0 },
+        { "path": "esp32c3-mini/partitions.bin", "offset": 32768 },
+        { "path": "esp32c3-mini/boot_app0.bin", "offset": 57344 },
+        { "path": "esp32c3-mini/firmware.bin", "offset": 65536 }
+      ]
+    }
+  ]
+}
