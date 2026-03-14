@@ -7,9 +7,9 @@ climate:
     min_temperature: 15
     max_temperature: 31
     temperature_step:
-      target_temperature: 1
-      current_temperature: 0.5
-  update_interval: 2s
+      target_temperature: 0.5
+      current_temperature: 0.1
+  update_interval: 3500ms
   debounce_delay: 100ms
   remote_temperature_timeout: 30min
   # connection_bootstrap_delay: 10s

@@ -1,6 +1,7 @@
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
+  min_version: 2025.11.0
   name_add_mac_suffix: true
 
   project:
@@ -9,15 +10,17 @@ esphome:
 
 esp32:
   board: esp32-s3-devkitc-1
+  flash_size: 8MB
   framework:
-    type: arduino
+    type: esp-idf
+    version: recommended
 
 uart:
   id: HP_UART
   baud_rate: 2400
   tx_pin: GPIO1
   rx_pin: GPIO2
-  
+
 sensor:
   - platform: uptime
     name: Uptime

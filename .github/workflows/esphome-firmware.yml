@@ -26,11 +26,11 @@ jobs:
           - config: esphome/serin_esp32s3.yaml
             name: m5atoms3lite
             chip: esp32s3
-            framework: arduino
+            flash_size: 8MB
           - config: esphome/serin_esp32c6.yaml
             name: nanoc6
             chip: esp32c6
-            framework: esp-idf
+            flash_size: 4MB
 
     steps:
       - name: Checkout
@@ -49,31 +49,33 @@ jobs:
           CONFIG: ${{ matrix.config }}
         run: esphome compile "$CONFIG"
 
+      - name: Find build artifacts
+        id: build-dir
+        run: |
+          # ESP-IDF builds output to different paths than Arduino
+          BOOTLOADER=$(find .esphome/build -name "bootloader.bin" | head -1)
+          PARTITIONS=$(find .esphome/build -name "partition-table.bin" -o -name "partitions.bin" | head -1)
+          FIRMWARE=$(find .esphome/build -name "firmware.bin" | head -1)
+          echo "bootloader=${BOOTLOADER}" >> "$GITHUB_OUTPUT"
+          echo "partitions=${PARTITIONS}" >> "$GITHUB_OUTPUT"
+          echo "firmware=${FIRMWARE}" >> "$GITHUB_OUTPUT"
+          echo "Found: bootloader=${BOOTLOADER} partitions=${PARTITIONS} firmware=${FIRMWARE}"
+
       - name: Create merged firmware binary
         env:
           CHIP: ${{ matrix.chip }}
           NAME: ${{ matrix.name }}
-          FRAMEWORK: ${{ matrix.framework }}
+          FLASH_SIZE: ${{ matrix.flash_size }}
+          BOOTLOADER: ${{ steps.build-dir.outputs.bootloader }}
+          PARTITIONS: ${{ steps.build-dir.outputs.partitions }}
+          FIRMWARE: ${{ steps.build-dir.outputs.firmware }}
         run: |
-          BUILD_DIR=".esphome/build/serin-cn105/.pioenvs/serin-cn105"
-
-          if [[ "$FRAMEWORK" == "arduino" ]]; then
-            BOOT_APP0=$(find ~/.platformio -name "boot_app0.bin" -path "*/partitions/*" 2>/dev/null | head -1)
-            esptool.py --chip "${CHIP}" merge_bin \
-              -o "${NAME}.bin" \
-              --flash_mode dio --flash_freq 80m --flash_size 4MB \
-              0x0000 "${BUILD_DIR}/bootloader.bin" \
-              0x8000 "${BUILD_DIR}/partitions.bin" \
-              0xe000 "${BOOT_APP0}" \
-              0x10000 "${BUILD_DIR}/firmware.bin"
-          else
-            esptool.py --chip "${CHIP}" merge_bin \
-              -o "${NAME}.bin" \
-              --flash_mode dio --flash_freq 80m --flash_size 4MB \
-              0x0000 "${BUILD_DIR}/bootloader.bin" \
-              0x8000 "${BUILD_DIR}/partitions.bin" \
-              0x10000 "${BUILD_DIR}/firmware.bin"
-          fi
+          esptool --chip "${CHIP}" merge-bin \
+            -o "${NAME}.bin" \
+            --flash-mode dio --flash-freq 80m --flash-size "${FLASH_SIZE}" \
+            0x0000 "${BOOTLOADER}" \
+            0x8000 "${PARTITIONS}" \
+            0x10000 "${FIRMWARE}"
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
