@@ -1,6 +1,6 @@
 substitutions:
-  name: serin-cn105
-  friendly_name: "Serin Heat Pump Controller"
+  name: serin
+  friendly_name: "Serin"
   # remote_temp_sensor: sensor.my_room_temperature  # Uncomment and set if using remote_temp
 
 logger:
