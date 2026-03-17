@@ -1,6 +1,6 @@
 {
   "name": "Mitsubishi HomeKit Controller",
-  "version": "0.0.0-dev",
+  "version": "0.1.1",
   "new_install_prompt_erase": true,
   "builds": [
     {
