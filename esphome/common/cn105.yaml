@@ -1,7 +1,7 @@
 climate:
 - platform: cn105
   id: hp
-  name: ${friendly_name}
+  name: None
   icon: mdi:heat-pump
   visual:
     min_temperature: 15
