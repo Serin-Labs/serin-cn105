@@ -7,7 +7,7 @@
     {
       "chipFamily": "ESP32-C6",
       "board": "nanoc6",
-      "sha256": "ae738a80ed83a9beea041e5cf72ef59d56278ad1bac69fbeef2b74f716f3fbe1",
+      "sha256": "5e7a582f434af6f1ec8421ec03214f2e0147f64150028f4d4ea0ec8bdee30999",
       "parts": [
         { "path": "nanoc6/bootloader.bin", "offset": 0 },
         { "path": "nanoc6/partitions.bin", "offset": 32768 },
@@ -18,7 +18,7 @@
     {
       "chipFamily": "ESP32-S3",
       "board": "m5atoms3-lite",
-      "sha256": "e8fb08e230962bb70651441c84cdcb93019c3a2fbf4606e4b4982a60ad974568",
+      "sha256": "864d9208c45a87f2d5f61c66aa1c306de1ba1d11ae3cd799b2425554e7bc6c12",
       "parts": [
         { "path": "m5atoms3-lite/bootloader.bin", "offset": 0 },
         { "path": "m5atoms3-lite/partitions.bin", "offset": 32768 },
@@ -29,7 +29,7 @@
     {
       "chipFamily": "ESP32",
       "board": "esp32-devkit",
-      "sha256": "a16c7e3a80814db090349af597fc51265ef96d42fbf90697c67bfd2a858e34ac",
+      "sha256": "c4df594e3062002131df0fb812c68c4a221bbde8b07ee926f217c4c8194c6ee8",
       "parts": [
         { "path": "esp32-devkit/bootloader.bin", "offset": 4096 },
         { "path": "esp32-devkit/partitions.bin", "offset": 32768 },
@@ -40,7 +40,7 @@
     {
       "chipFamily": "ESP32-C3",
       "board": "esp32c3-mini",
-      "sha256": "7bcd557ea85ffff908207feb63ca8d56ffdfcd9874b206b503d5811da99fac85",
+      "sha256": "5756a407480b017f2e6b453f5e115e79eaac83729e25f67955e0874578deaf2d",
       "parts": [
         { "path": "esp32c3-mini/bootloader.bin", "offset": 0 },
         { "path": "esp32c3-mini/partitions.bin", "offset": 32768 },
