@@ -1,21 +1,21 @@
 {
   "name": "Serin Link",
-  "version": "0.1.5",
-  "release_url": "https://github.com/Serin-Labs/serin-link/releases/tag/v0.1.5",
+  "version": "0.1.6",
+  "release_url": "https://github.com/Serin-Labs/serin-link/releases/tag/v0.1.6",
   "builds": [
     {
       "board": "link15",
       "path": "link15/app_secure.bin",
       "size": 2887680,
       "enc_size": 2888192,
-      "sha256": "5434388048b3ca586049d70249415a623b4d380938813c9bbc747c082d03595e"
+      "sha256": "06b93c8322a8995c5cc0bb369edd71502d7af20ce6396a5d4325dfb5de4e88e3"
     },
     {
       "board": "link21",
       "path": "link21/app_secure.bin",
       "size": 2887680,
       "enc_size": 2888192,
-      "sha256": "4978787d75356ce9f328d06583b2250760a1c546b58ada3a25e9bafe278a98f2"
+      "sha256": "cf96f4d7471a071214ab4c5722ec1954a8356c7b95453de1fd8d9aaa80c1f9da"
     }
   ]
 }
