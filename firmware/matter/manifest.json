@@ -1,13 +1,12 @@
 {
   "name": "Mitsubishi Matter Controller",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "new_install_prompt_erase": true,
-  "matter": {"qr": "MT:Y.K9042C00KA0648G00", "manual": "34970112332"},
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "board": "m5atoms3-lite",
-      "sha256": "d7f148570398522aca8ac520ce0f77660fb0da1e1f34aae068e745d08fe28676",
+      "sha256": "f354149bc48bc830d3b9270b1a0315633a57912668d8e1b009a82d08187cd5ee",
       "parts": [
         { "path": "m5atoms3-lite/bootloader.bin", "offset": 0 },
         { "path": "m5atoms3-lite/partitions.bin", "offset": 32768 },
@@ -18,7 +17,7 @@
     {
       "chipFamily": "ESP32-C6",
       "board": "nanoc6",
-      "sha256": "2520d553ae73c459089d1e698720de741cacddbc2c70c937d42193a2528e6e63",
+      "sha256": "bcdb1f82bd690cb47a58206bdebb5faa8f3d1e50c125d82695b3f0d38dc5cac4",
       "parts": [
         { "path": "nanoc6/bootloader.bin", "offset": 0 },
         { "path": "nanoc6/partitions.bin", "offset": 32768 },
