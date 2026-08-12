@@ -13,6 +13,19 @@ Firmware and ESPHome configurations for controlling Mitsubishi heat pumps via th
 
 Every `firmware/` directory carries a `manifest.json` next to its binaries. That manifest — not this README — is the source of truth for versions and per-board builds; the web installer and the Link updater read it straight from `main`, so a release needs no site deploy.
 
+### Release channels
+
+The HomeKit firmware publishes on two channels:
+
+| Channel | Manifest | Who reads it |
+|---------|----------|--------------|
+| Stable | `firmware/homekit/manifest.json` | The web installer, and every device's update check by default |
+| Beta | `firmware/homekit/beta/manifest.json` | Devices with "Beta updates" switched on, and the installer's pre-release option |
+
+Beta builds come from prerelease tags (`v0.2.6-beta.1`) and are written only into `firmware/homekit/beta/`. A stable release never touches that directory and a beta never touches stable, so the default install path is always the stable build. Only the newest beta is kept.
+
+A device on the beta channel is offered whichever of the two manifests names the higher version. Once a stable release passes the beta it supersedes it, so testers roll back onto stable without a new beta being cut and cannot be stranded on an abandoned prerelease.
+
 ## Supported Boards
 
 | Board | Chip | ESPHome | HomeKit | Matter |
