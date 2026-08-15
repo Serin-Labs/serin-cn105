@@ -1,0 +1,4 @@
+# Firmware images are opaque blobs. `-diff` stops git rendering megabytes of
+# noise, and `-merge` makes a conflicting image fail loudly rather than
+# producing a spliced binary that would brick whatever flashed it.
+*.bin binary -diff -merge
