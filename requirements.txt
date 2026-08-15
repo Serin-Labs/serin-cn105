@@ -6,4 +6,4 @@
 # The pin governs the prebuilt binaries only. Home Assistant users adopting
 # via dashboard_import compile with their own ESPHome, for which the contract
 # is `min_version` in esphome/common/esp32*.yaml.
-esphome==2026.5.3
+esphome==2026.7.4
