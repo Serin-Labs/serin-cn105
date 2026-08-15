@@ -1,0 +1,9 @@
+# Pinned so a firmware rebuild is reproducible and an upstream release cannot
+# change the shipped binaries without a commit saying so. This version is what
+# firmware/esphome/ was built with and what docs/esphome-rest-api.md is
+# verified against; bump all three together. Dependabot proposes the bumps.
+#
+# The pin governs the prebuilt binaries only. Home Assistant users adopting
+# via dashboard_import compile with their own ESPHome, for which the contract
+# is `min_version` in esphome/common/esp32*.yaml.
+esphome==2026.5.3

@@ -1,0 +1,17 @@
+version: 2
+updates:
+  # An ESPHome bump changes what gets flashed, so it arrives as a PR to review
+  # rather than as a silent difference between two builds of the same config.
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: chore
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci

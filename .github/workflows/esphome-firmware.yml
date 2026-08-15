@@ -3,6 +3,11 @@
 # Builds ESPHome firmware for all supported boards and commits
 # merged binaries to firmware/esphome/ for ESP Web Tools flashing.
 #
+# The matrix below is the only place a board is declared. Each build job emits
+# a manifest fragment beside its binary and the deploy job merges them, so
+# adding a board is one matrix entry rather than an entry plus a copy line plus
+# a hand-written manifest stanza that can disagree with both.
+#
 # Triggers:
 #   - Push to esphome/ configs on main
 #   - Manual dispatch
@@ -17,6 +22,16 @@ on:
       - main
   workflow_dispatch:
 
+# Two pushes in quick succession would otherwise run two deploy jobs that both
+# check out main and both push, and the loser fails. Serialize instead of
+# cancelling: a half-finished deploy must not be interrupted.
+concurrency:
+  group: esphome-firmware
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -25,10 +40,14 @@ jobs:
         include:
           - config: esphome/serin_esp32s3.yaml
             name: m5atoms3lite
+            board: m5atoms3-lite
+            family: ESP32-S3
             chip: esp32s3
             flash_size: 8MB
           - config: esphome/serin_esp32c6.yaml
             name: nanoc6
+            board: nanoc6
+            family: ESP32-C6
             chip: esp32c6
             flash_size: 4MB
 
@@ -40,9 +59,10 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+          cache: pip
 
       - name: Install ESPHome
-        run: pip install esphome
+        run: pip install -r requirements.txt
 
       - name: Compile firmware
         env:
@@ -97,11 +117,31 @@ jobs:
             0x8000 "${PARTITIONS}" \
             0x10000 "${FIRMWARE}"
 
+      # The build that produced the binary is the only thing that knows its
+      # hash and which chip it is for, so it writes that down here rather than
+      # the deploy job restating it.
+      - name: Describe build
+        env:
+          NAME: ${{ matrix.name }}
+          BOARD: ${{ matrix.board }}
+          FAMILY: ${{ matrix.family }}
+        run: |
+          jq -n \
+            --arg family "$FAMILY" \
+            --arg board "$BOARD" \
+            --arg sha "$(sha256sum "${NAME}.bin" | cut -d' ' -f1)" \
+            --arg path "${NAME}.bin" \
+            '{chipFamily: $family, board: $board, sha256: $sha, parts: [{path: $path, offset: 0}]}' \
+            > "${NAME}.json"
+          cat "${NAME}.json"
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
           name: firmware-${{ matrix.name }}
-          path: ${{ matrix.name }}.bin
+          path: |
+            ${{ matrix.name }}.bin
+            ${{ matrix.name }}.json
 
   deploy:
     needs: build
@@ -120,35 +160,40 @@ jobs:
 
       - name: Deploy firmware files
         run: |
+          set -euo pipefail
           rm -f firmware/esphome/*.bin
-          cp artifacts/firmware-m5atoms3lite/m5atoms3lite.bin firmware/esphome/
-          cp artifacts/firmware-nanoc6/nanoc6.bin firmware/esphome/
+          cp artifacts/firmware-*/*.bin firmware/esphome/
+          ls -l firmware/esphome/
 
+      # Built from the fragments the build jobs wrote, so the manifest lists
+      # exactly the boards that were compiled — never a board the matrix
+      # dropped or one whose binary failed to copy.
       - name: Generate manifest.json
         run: |
-          cat > firmware/esphome/manifest.json << 'EOF'
-          {
-            "name": "Serin ESPHome",
-            "builds": [
-              {
-                "chipFamily": "ESP32-S3",
-                "parts": [
-                  { "path": "m5atoms3lite.bin", "offset": 0 }
-                ]
-              },
-              {
-                "chipFamily": "ESP32-C6",
-                "parts": [
-                  { "path": "nanoc6.bin", "offset": 0 }
-                ]
-              }
-            ]
-          }
-          EOF
+          set -euo pipefail
+          VERSION=$(sed -n 's/^esphome==//p' requirements.txt)
+          test -n "$VERSION"
+          jq -s --arg version "$VERSION" \
+            '{name: "Serin ESPHome", version: $version, builds: .}' \
+            artifacts/firmware-*/*.json > firmware/esphome/manifest.json
+          cat firmware/esphome/manifest.json
+
+      - name: Validate manifest
+        run: python3 scripts/validate-manifests.py
 
       - name: Commit and push
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add firmware/esphome/
-          git diff --staged --quiet || (git commit -m "chore: update esphome firmware binaries" && git push)
+          git diff --staged --quiet && { echo "No firmware change."; exit 0; }
+          git commit -m "chore: update esphome firmware binaries"
+          # The concurrency group serializes this workflow against itself, but
+          # a HomeKit or Matter release can land on main at the same moment.
+          for attempt in 1 2 3; do
+            git push && exit 0
+            echo "Push rejected (attempt ${attempt}); rebasing onto main."
+            git pull --rebase origin main
+          done
+          exit 1

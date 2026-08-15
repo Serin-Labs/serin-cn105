@@ -2,6 +2,11 @@
 # `esphome compile esphome/serin_esp32c6.yaml` drops hundreds of MB here.
 .esphome/
 
+# The deploy job downloads build artifacts here before copying them into
+# firmware/. It stages only firmware/, but never let a stray `git add -A`
+# commit a duplicate copy of every binary.
+artifacts/
+
 # Tooling scratch output
 .playwright-mcp/
 .claude/settings.local.json

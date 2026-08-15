@@ -1,0 +1,46 @@
+# Manifest Validation
+#
+# This repo is read straight from `main` by the web installer and by every
+# Serin Link doing an OTA check, so a manifest naming a file that is not there
+# is a broken install the moment it lands. Three of the four products are
+# published by workflows in other repos; those push with SERIN_CN105_PAT rather
+# than the default GITHUB_TOKEN, which is what lets their pushes trigger this.
+
+name: Validate manifests
+
+on:
+  push:
+    paths:
+      - 'firmware/**'
+      - 'scripts/validate-manifests.py'
+  pull_request:
+    paths:
+      - 'firmware/**'
+      - 'scripts/validate-manifests.py'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Validate manifests
+        run: python3 scripts/validate-manifests.py
+
+      # Firmware images do not delta-compress, so history grows by roughly the
+      # size of every release forever. Nothing is wrong at the current size;
+      # this exists so the decision to move binaries to release assets arrives
+      # on a schedule instead of as a surprise. See README "Building".
+      - name: Check repository size
+        run: |
+          set -euo pipefail
+          SIZE=$(git count-objects -v | awk '/^size-pack:/ {print int($2 / 1024)}')
+          echo "Pack size: ${SIZE} MB"
+          if [ "$SIZE" -ge 250 ]; then
+            echo "::warning::Pack is ${SIZE} MB — time to revisit binary hosting."
+          fi

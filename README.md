@@ -45,7 +45,11 @@ The Link updates itself over the air instead: it fetches its manifest and image 
 
 ## Building
 
-ESPHome binaries are built from `esphome/` by [`.github/workflows/esphome-firmware.yml`](.github/workflows/esphome-firmware.yml), which recompiles every supported board on each push to those configs and commits the merged binaries and manifest back to `firmware/esphome/`. HomeKit, Matter, and Serin Link binaries are built elsewhere and published into this repo by their own release workflows.
+ESPHome binaries are built from `esphome/` by [`.github/workflows/esphome-firmware.yml`](.github/workflows/esphome-firmware.yml), which recompiles every supported board on each push to those configs and commits the merged binaries and manifest back to `firmware/esphome/`. The ESPHome version is pinned in [`requirements.txt`](requirements.txt) so a rebuild of unchanged configs produces unchanged binaries; Dependabot proposes the bumps. Each build job emits its own manifest fragment and the deploy job merges them, so adding a board is a single matrix entry.
+
+HomeKit, Matter, and Serin Link binaries are built elsewhere and published into this repo by their own release workflows.
+
+Whatever writes them, [`scripts/validate-manifests.py`](scripts/validate-manifests.py) runs on every push touching `firmware/` and fails if a manifest is malformed, names a file that is not there, or disagrees with the binary's hash. It also reports the pack size: firmware images do not delta-compress, so history grows by roughly every release forever, and past 250 MB the intended move is to publish binaries as GitHub Release assets and point manifests at them. Two things need checking on a throwaway release before committing to that — that asset downloads still send CORS headers after the redirect to `objects.githubusercontent.com`, and that they honour `Range` requests, which the Link's OTA depends on.
 
 ## License
 
