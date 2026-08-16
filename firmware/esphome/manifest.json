@@ -1,11 +1,11 @@
 {
   "name": "Serin ESPHome",
-  "version": "2026.5.3",
+  "version": "2026.7.4",
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "board": "m5atoms3-lite",
-      "sha256": "287123252d5392d7e40b46fc6e0c245c01bc43f57d0eece86645e00a019eff76",
+      "sha256": "f86c927b3c626839abbab2cc483e92082c08e03951cf32e7d659d56b983131dd",
       "parts": [
         {
           "path": "m5atoms3lite.bin",
@@ -16,7 +16,7 @@
     {
       "chipFamily": "ESP32-C6",
       "board": "nanoc6",
-      "sha256": "f1c40be842acf929a26998f97d229a3b2f1d0c101fcc260c637eff024f1080da",
+      "sha256": "46c9f5979445ed53e4e4a51994a76fdfdc661db670e3de154457c1c1965ef27a",
       "parts": [
         {
           "path": "nanoc6.bin",
