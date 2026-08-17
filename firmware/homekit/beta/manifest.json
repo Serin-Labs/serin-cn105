@@ -1,14 +1,14 @@
 {
   "name": "Mitsubishi HomeKit Controller",
-  "version": "0.2.5-beta.1",
+  "version": "0.2.5-beta.2",
   "channel": "beta",
-  "release_url": "https://github.com/akifbayram/mitsubishi-cn105-homekit/releases/tag/v0.2.5-beta.1",
+  "release_url": "https://github.com/akifbayram/mitsubishi-cn105-homekit/releases/tag/v0.2.5-beta.2",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-C6",
       "board": "nanoc6",
-      "sha256": "7aeb6b0f5e3e913e87b75168019eb5ce7d30f9f893960537609cbd606150fd25",
+      "sha256": "15ec7d178c7310cf04b6ea020f9534d31dd982023d0a5fb1f3f95d7a1ac68236",
       "parts": [
         { "path": "nanoc6/bootloader.bin", "offset": 0 },
         { "path": "nanoc6/partitions.bin", "offset": 32768 },
@@ -19,7 +19,7 @@
     {
       "chipFamily": "ESP32-S3",
       "board": "m5atoms3-lite",
-      "sha256": "0e4e6509fc27abadb810a4001b54613190b4177bde9f22b3945895d3e4ec617b",
+      "sha256": "dddc3dfe332af96ea9638c3a4df3d790eb537f0cffb2e92283ad0feb9a1eedd2",
       "parts": [
         { "path": "m5atoms3-lite/bootloader.bin", "offset": 0 },
         { "path": "m5atoms3-lite/partitions.bin", "offset": 32768 },
