@@ -5,7 +5,7 @@
     {
       "chipFamily": "ESP32-S3",
       "board": "m5atoms3-lite",
-      "sha256": "f86c927b3c626839abbab2cc483e92082c08e03951cf32e7d659d56b983131dd",
+      "sha256": "70238b809b3df14fa0b1619f322458729f66dd4b98d7267f657388692c0546f4",
       "parts": [
         {
           "path": "m5atoms3lite.bin",
@@ -16,7 +16,7 @@
     {
       "chipFamily": "ESP32-C6",
       "board": "nanoc6",
-      "sha256": "46c9f5979445ed53e4e4a51994a76fdfdc661db670e3de154457c1c1965ef27a",
+      "sha256": "2315c50a6119e66170b5209ba162f1111f6a1fe1d5a2499a542e56f7ddb8521e",
       "parts": [
         {
           "path": "nanoc6.bin",
