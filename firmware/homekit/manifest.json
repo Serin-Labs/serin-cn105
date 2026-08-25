@@ -1,13 +1,14 @@
 {
   "name": "Mitsubishi HomeKit Controller",
-  "version": "0.2.4",
-  "release_url": "https://github.com/akifbayram/mitsubishi-cn105-homekit/releases/tag/v0.2.4",
+  "version": "0.2.5",
+  "channel": "stable",
+  "release_url": "https://github.com/akifbayram/mitsubishi-cn105-homekit/releases/tag/v0.2.5",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-C6",
       "board": "nanoc6",
-      "sha256": "32bb3ecc322be4cdb0d163556feeadf5aeeea4b5016941224a85184d07a1c40c",
+      "sha256": "5be20df5afe44248ea7d7a164db15887914d81f83b4eddf87904af76badd2611",
       "parts": [
         { "path": "nanoc6/bootloader.bin", "offset": 0 },
         { "path": "nanoc6/partitions.bin", "offset": 32768 },
@@ -18,34 +19,12 @@
     {
       "chipFamily": "ESP32-S3",
       "board": "m5atoms3-lite",
-      "sha256": "1bfb0f7d37b6541b3063c37c030013d06839927b42285b34075a5a2ee3ab3fdb",
+      "sha256": "bf616e09bf1d4f4a4c52256ce2aaba6308b569def1dc96d072e59efaca2afea0",
       "parts": [
         { "path": "m5atoms3-lite/bootloader.bin", "offset": 0 },
         { "path": "m5atoms3-lite/partitions.bin", "offset": 32768 },
         { "path": "m5atoms3-lite/boot_app0.bin", "offset": 57344 },
         { "path": "m5atoms3-lite/firmware.bin", "offset": 65536 }
-      ]
-    },
-    {
-      "chipFamily": "ESP32",
-      "board": "esp32-devkit",
-      "sha256": "e3ba919cc6b5112677de984485084c35c21d7d4650bec16df754f3541db5ed95",
-      "parts": [
-        { "path": "esp32-devkit/bootloader.bin", "offset": 4096 },
-        { "path": "esp32-devkit/partitions.bin", "offset": 32768 },
-        { "path": "esp32-devkit/boot_app0.bin", "offset": 57344 },
-        { "path": "esp32-devkit/firmware.bin", "offset": 65536 }
-      ]
-    },
-    {
-      "chipFamily": "ESP32-C3",
-      "board": "esp32c3-mini",
-      "sha256": "c4d622e5bb9fc8c43de95ccbee8e6c7736d2d1de93f0736625d579e415f3d6fd",
-      "parts": [
-        { "path": "esp32c3-mini/bootloader.bin", "offset": 0 },
-        { "path": "esp32c3-mini/partitions.bin", "offset": 32768 },
-        { "path": "esp32c3-mini/boot_app0.bin", "offset": 57344 },
-        { "path": "esp32c3-mini/firmware.bin", "offset": 65536 }
       ]
     }
   ]
