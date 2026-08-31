@@ -1,0 +1,19 @@
+{
+  "name": "Serin Dial (factory)",
+  "version": "0.1.6",
+  "dirty": false,
+  "builds": [
+    {
+      "board": "viewe15",
+      "path": "serin_dial_viewe15_factory.bin",
+      "size": 2822144,
+      "sha256": "7e7de57b04973908a811ae5e5e2f3ef0e1df83a3c27d5f16e0f76df5edd61a3d"
+    },
+    {
+      "board": "viewe21",
+      "path": "serin_dial_viewe21_factory.bin",
+      "size": 2822144,
+      "sha256": "e799817a067f20e9be175b9bc356c3aa0db212e71d3e5e783657db705d9a9ff8"
+    }
+  ]
+}
