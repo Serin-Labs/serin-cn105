@@ -104,7 +104,8 @@ see [activating the PR gate](docs/release-validation.md#esphome-pull-request-gat
 
 The release environment uses Linux x86_64 and Python 3.12. ESPHome is pinned
 in [`requirements.txt`](requirements.txt), with its resolved Python dependencies
-constrained by [`requirements-build.lock`](requirements-build.lock). Both board
+constrained by [`requirements-build.txt`](requirements-build.txt). The `.txt`
+extension lets Dependabot discover the pip constraints file. Both board
 configs pin ESP-IDF 5.5.5. Its separate Python environment is constrained by
 [`requirements-idf.lock`](requirements-idf.lock) through `PIP_CONSTRAINT` during
 compilation. CI starts with fresh environments and verifies both installed
@@ -130,7 +131,7 @@ python3.12 -m venv .venv
 . .venv/bin/activate
 python -m pip install -r requirements.txt
 python -m pip check
-python scripts/check-python-lock.py requirements-build.lock
+python scripts/check-python-lock.py requirements-build.txt
 python scripts/check-esphome-packages.py
 export ESPHOME_ESP_IDF_PREFIX="$(mktemp -d -t serin-esphome-idf.XXXXXX)"
 export PIP_CONSTRAINT="$PWD/requirements-idf.lock"
@@ -151,7 +152,7 @@ environment and install the proposed `esphome==VERSION` directly, without the
 old constraints. Update both board configs' component and framework pins and
 their `min_version` as needed, and coordinate the same pins with the website's
 `esphome/generate-yaml.html`. Run the package-resolution check and compile both
-boards before recording `python -m pip freeze` in `requirements-build.lock`.
+boards before recording `python -m pip freeze` in `requirements-build.txt`.
 For an IDF dependency update, build with a fresh `ESPHOME_ESP_IDF_PREFIX` and
 without `PIP_CONSTRAINT`, then use that prefix's `penvs/*/bin/python -m pip
 freeze --all` to refresh `requirements-idf.lock`. Retain both locks' explanatory

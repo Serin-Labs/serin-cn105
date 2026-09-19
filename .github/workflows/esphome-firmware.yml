@@ -24,7 +24,7 @@ on:
     paths:
       - 'esphome/**'
       - 'requirements.txt'
-      - 'requirements-build.lock'
+      - 'requirements-build.txt'
       - 'requirements-idf.lock'
       - 'scripts/check-esphome-packages.py'
       - 'scripts/check-python-lock.py'
@@ -76,7 +76,7 @@ jobs:
           cache: pip
           cache-dependency-path: |
             requirements.txt
-            requirements-build.lock
+            requirements-build.txt
             requirements-idf.lock
 
       - name: Install ESPHome
@@ -95,7 +95,7 @@ jobs:
         run: |
           python scripts/check-esphome-packages.py
           esphome compile "$CONFIG"
-          python scripts/check-python-lock.py requirements-build.lock
+          python scripts/check-python-lock.py requirements-build.txt
           idf_python=( "${ESPHOME_ESP_IDF_PREFIX}"/penvs/*/bin/python )
           test "${#idf_python[@]}" -eq 1
           "${idf_python[0]}" scripts/check-python-lock.py requirements-idf.lock
