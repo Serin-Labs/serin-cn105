@@ -11,3 +11,7 @@ artifacts/
 .playwright-mcp/
 .claude/settings.local.json
 __pycache__/
+
+# serin-link's publish_fw.py --distribution validates a copy of this checkout
+# in .ota-stage-*/ at the root; a killed run can leave one behind.
+.ota-stage-*/

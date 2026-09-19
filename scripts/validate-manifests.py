@@ -1,152 +1,324 @@
 #!/usr/bin/env python3
-"""Validate every firmware manifest in this repo against the binaries beside it.
+"""Validate distribution manifests or explicit staged manifests before publishing.
 
-This repo is a CDN with a git front-end: the web installer and the Serin Link
-updater read manifests straight from `main`, so a manifest that names a file
-that is not there is a broken install for every user the moment it lands. Three
-of the four products are published by workflows in *other* repos, which is
-exactly why the check lives here rather than in any one of them.
-
-Two manifest shapes exist; see CLAUDE.md for the full contract.
-
-  ESP Web Tools  builds[] of {chipFamily, sha256, parts[{path, offset}]}.
-                 sha256 covers the firmware.bin part alone, not the whole
-                 flash image, so that is the only part worth hashing.
-
-  Serin Link     builds[] of {board, path, size, enc_size, sha256}. Only
-                 ciphertext is hosted here and sha256 is over the *decrypted*
-                 image, so it cannot be checked from this repo at all. The
-                 on-disk size is enc_size, not size, and that can be.
+No arguments scans both manifest.json and factory-manifest.json under firmware/.
+ESP Web Tools hashes cover the app part (or the sole merged part). Plaintext
+Link OTA and factory images require the pinned signer and embedded version.
+Legacy encrypted Link releases must match the archived bytes and metadata;
+their plaintext hash/signature cannot be verified without decryption.
 """
-
+import argparse
+import contextlib
 import hashlib
+import io
 import json
 import pathlib
+import re
+import struct
 import sys
+import tempfile
+from urllib.parse import urlsplit
+
+try:
+    import espsecure
+    from esptool import FatalError
+    from esptool.bin_image import ESP32S3FirmwareImage
+    from cryptography.hazmat.primitives import serialization
+    from cryptography.hazmat.primitives.asymmetric import rsa
+except ImportError:
+    sys.exit("Install validation tools: python -m pip install -r scripts/requirements-validation.txt")
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-REQUIRED_KEYS = ("name", "version")
-
-errors = []
-
-
-def err(message):
-    errors.append(message)
-    print(f"::error::{message}")
-
-
-def warn(message):
-    print(f"::warning::{message}")
-
-
-def sha256(path):
-    digest = hashlib.sha256()
-    with open(path, "rb") as handle:
-        for chunk in iter(lambda: handle.read(1 << 20), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
+PUBLIC_KEY = ROOT / "scripts/keys/serin-link-release.pub"
+LEGACY_INDEX = ROOT / "scripts/legacy-link-artifacts.json"
+WEB_BOARDS = {"m5atoms3-lite": "ESP32-S3", "nanoc6": "ESP32-C6"}
+FLASH_SIZE = {"ESP32-S3": 8 * 1024 * 1024, "ESP32-C6": 4 * 1024 * 1024}
+LINK_PARTITIONS = {
+    "nvs": (1, 2, 0x9000, 0x6000, 0),
+    "otadata": (1, 0, 0xf000, 0x2000, 0),
+    "phy_init": (1, 1, 0x11000, 0x1000, 0),
+    "ota_0": (0, 16, 0x20000, 0x400000, 0),
+    "ota_1": (0, 17, 0x420000, 0x400000, 0),
+}
 
 
-def hash_target(build):
-    """The part a build's sha256 is taken over.
-
-    Multi-part builds hash firmware.bin; the merged single-part ESPHome images
-    hash the one part they have.
-    """
-    parts = build.get("parts", [])
-    firmware = [p for p in parts if p["path"].endswith("firmware.bin")]
-    if firmware:
-        return firmware[0]["path"]
-    return parts[0]["path"] if len(parts) == 1 else None
+def require(condition, message):
+    if not condition:
+        raise ValueError(message)
 
 
-def check_link(manifest, manifest_dir, rel):
-    for build in manifest.get("builds", []):
-        board = build.get("board", "?")
-        path = manifest_dir / build["path"]
-        if not path.exists():
-            err(f"{rel}: {board}: {build['path']} is missing")
-            continue
-        actual = path.stat().st_size
-        expected = build.get("enc_size")
-        if expected is None:
-            err(f"{rel}: {board}: no enc_size")
-        elif actual != expected:
-            err(f"{rel}: {board}: {build['path']} is {actual} B, enc_size says {expected}")
+def unique_object(pairs):
+    obj = {}
+    for key, value in pairs:
+        require(key not in obj, f"duplicate JSON key {key!r}")
+        obj[key] = value
+    return obj
+
+
+def read_json(path):
+    return json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=unique_object)
+
+
+def positive_int(value, label):
+    require(type(value) is int and value > 0, f"{label} must be a positive integer")
+
+
+def digest_field(value):
+    require(isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value),
+            "sha256 must be 64 lowercase hexadecimal characters")
+
+
+def asset_path(parent, value):
+    require(isinstance(value, str) and re.fullmatch(r"[A-Za-z0-9_./-]+", value),
+            "path must be a relative local URL path")
+    require(not value.startswith("/") and all(p not in ("", ".", "..") for p in value.split("/")),
+            f"unsafe path {value!r}")
+    path = (parent / value).resolve()
+    require(path.is_relative_to(parent.resolve()), f"path escapes manifest directory: {value}")
+    require(path.is_file(), f"path is missing or not a file: {value}")
+    require(path.stat().st_size > 0, f"path is empty: {value}")
+    return path
+
+
+def check_hash(data, declared):
+    digest_field(declared)
+    require(hashlib.sha256(data).hexdigest() == declared, "sha256 does not match file contents")
+
+
+def check_esp_image(data):
+    """Parse an ESP32-S3 image and check its ordinary image checksums."""
+    with contextlib.redirect_stdout(io.StringIO()):
+        image = ESP32S3FirmwareImage(io.BytesIO(data))
+    require(image.chip_id == 9, "image targets a chip other than ESP32-S3")
+    require(image.segments and image.calculate_checksum() == image.checksum, "invalid ESP image checksum")
+    require(image.append_digest and image.stored_digest == image.calc_digest, "invalid ESP image SHA-256")
+    return image
+
+
+def check_link_app(data, version):
+    require(8192 <= len(data) <= 0x400000 and len(data) % 4096 == 0,
+            "signature: app must fit a 4 MiB OTA slot and have a complete signature sector")
+    sector = data[-4096:]
+    require(sector[:2] == b"\xe7\x02" and sector[1216:] == b"\xff" * (4096 - 1216),
+            "signature: expected a single RSA signature in block zero")
+    pem = PUBLIC_KEY.read_bytes()
+    public = serialization.load_pem_public_key(pem)
+    require(isinstance(public, rsa.RSAPublicKey) and public.key_size == 3072,
+            "signature: pinned key must be RSA-3072")
+    with tempfile.TemporaryDirectory(prefix="serin-verify-") as tmp:
+        digest = pathlib.Path(tmp) / "key-digest.bin"
+        with PUBLIC_KEY.open("rb") as key, contextlib.redirect_stdout(io.StringIO()):
+            espsecure.digest_sbv2_public_key(argparse.Namespace(keyfile=key, output=str(digest)))
+        require(hashlib.sha256(sector[36:812]).digest() == digest.read_bytes(),
+                "signature: embedded signing key differs from the production key")
+    try:
+        with contextlib.redirect_stdout(io.StringIO()):
+            espsecure.verify_signature_v2(argparse.Namespace(
+                keyfile=io.BytesIO(pem), datafile=io.BytesIO(data), hsm=False))
+    except FatalError as error:
+        raise ValueError(f"signature: {error}") from error
+    image = check_esp_image(data[:-4096])
+    signature_offset = ((image.data_length + 32 + 4095) // 4096) * 4096
+    require(signature_offset == len(data) - 4096,
+            "signature is not at the offset determined by the ESP image length")
+    desc = image.segments[0].data[:256]
+    require(image.segments[0].file_offs == 24 and len(desc) == 256
+            and desc[:4] == b"\x32\x54\xcd\xab", "version: missing app descriptor")
+    raw, terminator, _ = desc[16:48].partition(b"\0")
+    require(raw and terminator, "version: descriptor version is empty or unterminated")
+    require(raw.decode("ascii") == version, "version: embedded app version differs from manifest")
+
+
+def check_factory(data, version):
+    require(0x22000 <= len(data) <= 0x420000, "factory size does not fit the ota_0 layout")
+    check_esp_image(data[:0x8000])
+    table = data[0x8000:0x8c00]
+    partitions = {}
+    checksum_found = False
+    for offset in range(0, len(table), 32):
+        entry = table[offset:offset + 32]
+        if entry[:2] == b"\xeb\xeb":
+            require(entry[:16] == b"\xeb\xeb" + b"\xff" * 14
+                    and entry[16:] == hashlib.md5(table[:offset]).digest(),
+                    "partition table checksum is invalid")
+            require(table[offset + 32:] == b"\xff" * (len(table) - offset - 32),
+                    "partition table has data after its checksum")
+            checksum_found = True
+            break
+        require(entry[:2] == b"\xaa\x50", "partition table entry or checksum is missing")
+        _, typ, sub, start, size, label, flags = struct.unpack("<2sBBII16sI", entry)
+        name = label.split(b"\0", 1)[0].decode("ascii")
+        require(name not in partitions, f"duplicate partition {name}")
+        partitions[name] = (typ, sub, start, size, flags)
+    require(checksum_found and partitions == LINK_PARTITIONS,
+            "partition layout differs from the supported Link layout (offsets, sizes, types or flags)")
+    check_link_app(data[0x20000:], version)
+
+
+def check_web_build(build, parent):
+    board, family = build.get("board"), build.get("chipFamily")
+    require(isinstance(board, str) and board in WEB_BOARDS, "unknown controller board")
+    require(family == WEB_BOARDS[board], "chipFamily does not match board")
+    require(not any(k in build for k in ("path", "size", "enc_size")), "mixed manifest formats")
+    parts = build.get("parts")
+    require(isinstance(parts, list) and parts, "parts must be a nonempty array")
+    files, ranges = [], []
+    for part in parts:
+        require(isinstance(part, dict), "part must be an object")
+        path = asset_path(parent, part.get("path"))
+        offset = part.get("offset")
+        require(type(offset) is int and offset >= 0 and offset % 4096 == 0,
+                "part offset must be a nonnegative flash-sector-aligned integer")
+        end = offset + ((path.stat().st_size + 4095) // 4096) * 4096
+        require(end <= FLASH_SIZE[family], "part exceeds board flash size")
+        require(path not in files, "duplicate part path")
+        files.append(path)
+        ranges.append((offset, end))
+    ranges.sort()
+    require(all(right[0] >= left[1] for left, right in zip(ranges, ranges[1:])), "flash parts overlap")
+    targets = [p for p in files if p.name == "firmware.bin"]
+    target = files[0] if len(files) == 1 else targets[0] if len(targets) == 1 else None
+    require(target is not None, "cannot identify the part covered by sha256")
+    check_hash(target.read_bytes(), build.get("sha256"))
+    return set(files)
+
+
+def check_link_build(build, parent, version, kind):
+    board = build.get("board")
+    require(isinstance(board, str) and board in ({"viewe15", "viewe21"} if kind == "factory" else {"link15", "link21"}),
+            "unknown Link board for this manifest format")
+    require(not any(k in build for k in ("parts", "chipFamily")), "mixed manifest formats")
+    path = asset_path(parent, build.get("path"))
+    positive_int(build.get("size"), "size")
+    digest_field(build.get("sha256"))
+    data = path.read_bytes()
+    if kind == "legacy":
+        positive_int(build.get("enc_size"), "enc_size")
+        require(len(data) == build["enc_size"], "legacy enc_size differs from file size")
+        archived = read_json(LEGACY_INDEX)
+        metadata = {key: build[key] for key in ("board", "path", "size", "enc_size", "sha256")}
+        require(any(record["version"] == version and record["build"] == metadata
+                    and record["ciphertext_sha256"] == hashlib.sha256(data).hexdigest() for record in archived),
+                "legacy encrypted artifact differs from the archive; new releases must use signed plaintext")
+        print(f"  legacy {board}: archived ciphertext verified; plaintext hash/signature/version not reverified")
+    else:
+        require("enc_size" not in build, "mixed plaintext/encrypted manifest formats")
+        require(len(data) == build["size"], "size differs from file size")
+        check_hash(data, build["sha256"])
+        if kind == "factory":
+            check_factory(data, version)
         else:
-            print(f"  ok  {board}: {actual} B matches enc_size (sha256 is over plaintext, unverifiable here)")
+            check_link_app(data, version)
+        print(f"  ok  {board}: size, sha256, signature and embedded version")
+    return {path}
 
 
-def check_web_tools(manifest, manifest_dir, rel):
-    for build in manifest.get("builds", []):
-        board = build.get("board") or build.get("chipFamily", "?")
-        missing = [p["path"] for p in build.get("parts", []) if not (manifest_dir / p["path"]).exists()]
-        for path in missing:
-            err(f"{rel}: {board}: {path} is missing")
-
-        declared = build.get("sha256")
-        target = hash_target(build)
-        if declared is None:
-            err(f"{rel}: {board}: no sha256")
-        elif target is None:
-            err(f"{rel}: {board}: cannot tell which part sha256 covers")
-        elif target not in missing:
-            actual = sha256(manifest_dir / target)
-            if actual != declared:
-                err(f"{rel}: {board}: {target} hashes to {actual}, manifest says {declared}")
+def validate_manifest(path, allow_dirty=False):
+    manifest = read_json(path)
+    require(isinstance(manifest, dict), "manifest must be an object")
+    require(isinstance(manifest.get("name"), str) and manifest["name"].strip(), "name must be a nonempty string")
+    version = manifest.get("version")
+    require(isinstance(version, str) and len(version) <= 31
+            and re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z]+\.[0-9]+)?", version), "invalid version")
+    channel = manifest.get("channel", "stable")
+    require(channel in ("stable", "beta"), "channel must be stable or beta")
+    require((channel == "beta") == ("-" in version), "channel does not match release version")
+    if "new_install_prompt_erase" in manifest:
+        require(type(manifest["new_install_prompt_erase"]) is bool, "new_install_prompt_erase must be a boolean")
+    if "release_url" in manifest:
+        value = manifest["release_url"]
+        require(isinstance(value, str), "release_url must be an HTTPS URL")
+        url = urlsplit(value)
+        require(url.scheme == "https" and url.hostname and not url.username and not url.password,
+                "release_url must be an HTTPS URL without credentials")
+    builds = manifest.get("builds")
+    require(isinstance(builds, list) and builds and all(isinstance(b, dict) for b in builds),
+            "builds must be a nonempty array of objects")
+    require(path.name in ("manifest.json", "factory-manifest.json"), "unsupported manifest filename")
+    if path.name == "factory-manifest.json":
+        kind = "factory"
+        require(channel == "stable", "factory manifests have no beta channel")
+        require(type(manifest.get("dirty")) is bool, "factory dirty provenance must be a boolean")
+        require(allow_dirty or not manifest["dirty"], "dirty factory build cannot be published")
+        if manifest["dirty"]:
+            print("::warning::dirty factory build: local inspection only, not approved for publication")
+    elif any("parts" in build for build in builds):
+        kind = "web"
+    else:
+        kind = "legacy" if any("enc_size" in build for build in builds) else "link"
+    # Distribution paths identify the intended consumer. Do not let changing
+    # a Link manifest to a controller shape silently bypass Link verification.
+    try:
+        relative = path.resolve().relative_to((ROOT / "firmware").resolve())
+        product = relative.parts[0]
+    except ValueError:
+        product = None  # Explicit staged manifests may be outside the checkout.
+    if product == "link":
+        require(kind != "web", "controller format is invalid in the Link distribution")
+        if path.name == "manifest.json":
+            if relative.as_posix() in ("link/manifest.json", "link/beta/manifest.json"):
+                require(kind == "legacy", "existing Link feeds require the legacy encrypted format")
+                expected_channel = "beta" if "beta" in relative.parts else "stable"
             else:
-                print(f"  ok  {board}: {target} matches sha256")
+                require(relative.as_posix() in ("link/ota/stable/manifest.json", "link/ota/beta/manifest.json"),
+                        "unknown Link OTA channel directory")
+                require(kind == "link", "legacy encrypted format is invalid in a plaintext OTA feed")
+                expected_channel = relative.parts[2]
+            require(channel == expected_channel, "manifest channel does not match the channel directory")
+    elif product in ("esphome", "homekit", "matter"):
+        require(kind == "web", "Link format is invalid in a controller distribution")
+    referenced, boards = set(), set()
+    for build in builds:
+        board = build.get("board")
+        require(isinstance(board, str), "board must be a string")
+        require(board not in boards, f"duplicate board {board}")
+        boards.add(board)
+        if kind == "web":
+            referenced.update(check_web_build(build, path.parent))
+        else:
+            files = check_link_build(build, path.parent, version, kind)
+            require(not referenced.intersection(files), "duplicate Link artifact path")
+            referenced.update(files)
+    return referenced
 
 
 def main():
-    manifests = sorted(ROOT.glob("firmware/**/manifest.json"))
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("manifests", nargs="*", type=pathlib.Path, help="explicit staged manifests; default: scan firmware/")
+    parser.add_argument("--allow-dirty", action="store_true", help="inspect dirty factory builds locally; never use for publication")
+    args = parser.parse_args()
+    manifests = args.manifests or sorted(set(ROOT.glob("firmware/**/manifest.json")) |
+                                        set(ROOT.glob("firmware/**/factory-manifest.json")))
     if not manifests:
-        err("no manifests found under firmware/")
+        print("::error::no manifests found under firmware/")
         return 1
-
-    for manifest_path in manifests:
-        rel = manifest_path.relative_to(ROOT)
-        manifest_dir = manifest_path.parent
-        print(f"\n{rel}")
-
+    errors, referenced = 0, set()
+    for path in manifests:
+        print(f"\n{path}")
         try:
-            manifest = json.loads(manifest_path.read_text())
-        except json.JSONDecodeError as exc:
-            err(f"{rel}: invalid JSON: {exc}")
-            continue
-
-        for key in REQUIRED_KEYS:
-            if not manifest.get(key):
-                err(f"{rel}: missing '{key}'")
-        if not manifest.get("builds"):
-            err(f"{rel}: no builds")
-            continue
-
-        if "link" in rel.parts:
-            check_link(manifest, manifest_dir, rel)
-            referenced = {(manifest_dir / b["path"]).resolve() for b in manifest["builds"]}
-        else:
-            check_web_tools(manifest, manifest_dir, rel)
-            referenced = {
-                (manifest_dir / p["path"]).resolve()
-                for b in manifest["builds"]
-                for p in b.get("parts", [])
-            }
-
-        # A binary no manifest names is dead weight at best and a stale build
-        # someone is about to flash by hand at worst. Warn rather than fail:
-        # nested channels legitimately own their own files.
-        nested = {m.parent for m in manifests if m != manifest_path and manifest_dir in m.parents}
-        for orphan in sorted(manifest_dir.rglob("*.bin")):
+            referenced.update(validate_manifest(path, args.allow_dirty))
+        except (OSError, ValueError, TypeError, KeyError, struct.error, FatalError) as error:
+            print(f"::error::{path}: {error}")
+            errors += 1
+    stray = 0
+    if not args.manifests and not errors:
+        link = (ROOT / "firmware/link").resolve()
+        for orphan in sorted(ROOT.glob("firmware/**/*.bin")):
             if orphan.resolve() in referenced:
                 continue
-            if any(parent in orphan.parents for parent in nested):
-                continue
-            warn(f"{rel}: {orphan.relative_to(ROOT)} is not referenced by any build")
-
-    print()
+            # Link files are copied in by hand, not rewritten by a workflow, so
+            # a leftover image is a skipped release step (e.g. a renamed
+            # factory image) that would otherwise stay downloadable.
+            if orphan.resolve().is_relative_to(link):
+                print(f"::error::{orphan}: Link file not referenced by any manifest")
+                stray += 1
+            else:
+                print(f"::warning::{orphan}: not referenced by any manifest")
     if errors:
-        print(f"FAILED: {len(errors)} problem(s)")
+        print(f"FAILED: {errors} manifest(s) invalid")
+        return 1
+    if stray:
+        print(f"FAILED: {stray} unreferenced Link file(s); remove them or reference them from a manifest")
         return 1
     print(f"OK: {len(manifests)} manifests validated")
     return 0

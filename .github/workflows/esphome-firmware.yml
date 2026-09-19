@@ -152,6 +152,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      - name: Set up validation tools
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/requirements-validation.txt
+
+      - name: Install validation tools
+        run: python -m pip install -r scripts/requirements-validation.txt
+
       - name: Download all firmware artifacts
         uses: actions/download-artifact@v8
         with:
@@ -195,5 +205,8 @@ jobs:
             git push && exit 0
             echo "Push rejected (attempt ${attempt}); rebasing onto main."
             git pull --rebase origin main
+            # The rebase changes the candidate tree. Check it before retrying
+            # publication, including files from other producers.
+            python3 scripts/validate-manifests.py
           done
           exit 1

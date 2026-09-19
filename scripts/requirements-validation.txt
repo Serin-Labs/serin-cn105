@@ -1,0 +1,2 @@
+# Match the Link producer's release verification tooling.
+esptool==4.12.0
