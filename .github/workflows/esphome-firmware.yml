@@ -4,30 +4,41 @@
 # merged binaries to firmware/esphome/ for ESP Web Tools flashing.
 #
 # The matrix below is the only place a board is declared. Each build job emits
-# a manifest fragment beside its binary and the deploy job merges them, so
+# a manifest fragment beside its binary and the validation job merges them, so
 # adding a board is one matrix entry rather than an entry plus a copy line plus
 # a hand-written manifest stanza that can disagree with both.
 #
 # Triggers:
-#   - Push to esphome/ configs on main
-#   - Manual dispatch
+#   - All pull requests targeting main (build and validate only)
+#   - Push to configs, build dependencies, or this workflow on main
+#   - Manual dispatch (publication only from main)
 
 name: ESPHome Firmware Release
 
 on:
+  # A required PR check must run even when only unrelated files changed.
+  pull_request:
+    branches:
+      - main
   push:
     paths:
       - 'esphome/**'
+      - 'requirements.txt'
+      - 'requirements-build.lock'
+      - 'requirements-idf.lock'
+      - 'scripts/check-esphome-packages.py'
+      - 'scripts/check-python-lock.py'
+      - 'scripts/check-esphome-workflow.mjs'
+      - '.github/workflows/esphome-firmware.yml'
     branches:
       - main
   workflow_dispatch:
 
-# Two pushes in quick succession would otherwise run two deploy jobs that both
-# check out main and both push, and the loser fails. Serialize instead of
-# cancelling: a half-finished deploy must not be interrupted.
+# Serialize publication on main. Superseded PR checks can be cancelled without
+# sharing a group with releases or other PRs.
 concurrency:
-  group: esphome-firmware
-  cancel-in-progress: false
+  group: esphome-firmware-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -36,6 +47,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         include:
           - config: esphome/serin_esp32s3.yaml
@@ -54,20 +66,39 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
       - name: Set up Python
         uses: actions/setup-python@v7
         with:
           python-version: '3.12'
           cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-build.lock
+            requirements-idf.lock
 
       - name: Install ESPHome
-        run: pip install -r requirements.txt
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -r requirements.txt
+          echo "${GITHUB_WORKSPACE}/.venv/bin" >> "$GITHUB_PATH"
 
       - name: Compile firmware
         env:
           CONFIG: ${{ matrix.config }}
-        run: esphome compile "$CONFIG"
+          # IDF has a separate Python environment. A fresh prefix ensures an
+          # old stamped installation cannot bypass the committed constraints.
+          ESPHOME_ESP_IDF_PREFIX: ${{ runner.temp }}/esphome-idf
+          PIP_CONSTRAINT: ${{ github.workspace }}/requirements-idf.lock
+        run: |
+          python scripts/check-esphome-packages.py
+          esphome compile "$CONFIG"
+          python scripts/check-python-lock.py requirements-build.lock
+          idf_python=( "${ESPHOME_ESP_IDF_PREFIX}"/penvs/*/bin/python )
+          test "${#idf_python[@]}" -eq 1
+          "${idf_python[0]}" scripts/check-python-lock.py requirements-idf.lock
 
       - name: Find build artifacts
         id: build-dir
@@ -139,18 +170,44 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: firmware-${{ matrix.name }}
+          if-no-files-found: error
           path: |
             ${{ matrix.name }}.bin
             ${{ matrix.name }}.json
 
-  deploy:
+  validate:
+    name: ESPHome validation
     needs: build
+    # A failed dependency must make this required check fail, not be skipped.
+    if: ${{ always() }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
+      - name: Require successful builds
+        env:
+          BUILD_RESULT: ${{ needs.build.result }}
+        run: |
+          if [ "$BUILD_RESULT" != success ]; then
+            echo "::error::Both board builds must succeed; build result: ${BUILD_RESULT}"
+            exit 1
+          fi
+
       - name: Checkout
         uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Set up workflow checks
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+
+      - name: Check workflow guards
+        env:
+          WORKFLOW_TEST_MODULES: ${{ runner.temp }}/workflow-check/node_modules
+        run: |
+          npm install --prefix "${RUNNER_TEMP}/workflow-check" --ignore-scripts --no-audit --no-fund \
+            @actions/expressions@0.3.61 yaml@2.9.1
+          node scripts/check-esphome-workflow.mjs
 
       - name: Set up validation tools
         uses: actions/setup-python@v7
@@ -168,7 +225,7 @@ jobs:
           pattern: firmware-*
           path: artifacts/
 
-      - name: Deploy firmware files
+      - name: Stage candidate firmware
         run: |
           set -euo pipefail
           rm -f firmware/esphome/*.bin
@@ -190,6 +247,60 @@ jobs:
 
       - name: Validate manifest
         run: python3 scripts/validate-manifests.py
+
+      - name: Upload validated firmware
+        uses: actions/upload-artifact@v7
+        with:
+          name: validated-esphome
+          path: firmware/esphome/
+          if-no-files-found: error
+
+  deploy:
+    needs: validate
+    if: >-
+      ${{ needs.validate.result == 'success' && github.ref == 'refs/heads/main' &&
+          (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Create distribution token
+        id: publisher-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.SERIN_PUBLISHER_CLIENT_ID }}
+          private-key: ${{ secrets.SERIN_PUBLISHER_PRIVATE_KEY }}
+          owner: Serin-Labs
+          repositories: serin-cn105
+          permission-contents: write
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          token: ${{ steps.publisher-token.outputs.token }}
+
+      - name: Set up validation tools
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: scripts/requirements-validation.txt
+
+      - name: Install validation tools
+        run: python -m pip install -r scripts/requirements-validation.txt
+
+      - name: Download validated firmware
+        uses: actions/download-artifact@v8
+        with:
+          name: validated-esphome
+          path: artifacts/esphome/
+
+      - name: Stage and validate publication
+        run: |
+          set -euo pipefail
+          rm -f firmware/esphome/*.bin
+          cp artifacts/esphome/* firmware/esphome/
+          python3 scripts/validate-manifests.py
 
       - name: Commit and push
         run: |

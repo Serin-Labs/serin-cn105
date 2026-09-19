@@ -8,6 +8,7 @@
 artifacts/
 
 # Tooling scratch output
+.venv/
 .playwright-mcp/
 .claude/settings.local.json
 __pycache__/

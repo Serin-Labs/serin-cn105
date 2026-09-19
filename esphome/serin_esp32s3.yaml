@@ -1,6 +1,7 @@
 substitutions:
   name: serin
   friendly_name: "Serin"
+  max_links: "1"
   # remote_temp_sensor: sensor.my_room_temperature  # Uncomment and set if using remote_temp
 
 logger:
@@ -16,13 +17,15 @@ dashboard_import:
   import_full_config: false
 
 external_components:
-  - source: github://echavet/MitsubishiCN105ESPHome
+  - source: github://echavet/MitsubishiCN105ESPHome@29133a9b84d826f6a6e9a3025f9c556460b0e0f8
+  - source: github://Serin-Labs/serin-link-core@93bf46ffc6b63bba020d01e80e5e0bb4573906d5
+    components: [serin_link]
 
 packages:
-  esp32s3: github://Serin-Labs/serin-cn105/esphome/common/esp32s3.yaml
-  cn105: github://Serin-Labs/serin-cn105/esphome/common/cn105.yaml
-  wifi: github://Serin-Labs/serin-cn105/esphome/common/wifi.yaml
-  web_server: github://Serin-Labs/serin-cn105/esphome/common/web_server.yaml
+  esp32s3: !include common/esp32s3.yaml
+  cn105: !include common/cn105.yaml
+  wifi: !include common/wifi.yaml
+  web_server: !include common/web_server.yaml
 
   # To enable remote temperature sensor, uncomment the line below and set remote_temp_sensor above
-  # remote_temp: github://Serin-Labs/serin-cn105/esphome/common/remote_temp.yaml
+  # remote_temp: !include common/remote_temp.yaml

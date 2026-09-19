@@ -12,6 +12,85 @@ push failure also blocks release asset uploads. Link's `tools/publish_fw.py
 candidate tree before replacing the local plaintext channel. It never pushes;
 run the validator again immediately before publication and after any rebase.
 
+## ESPHome pull-request gate
+
+The ESPHome workflow builds both supported boards for every pull request whose
+base is `main`, including documentation-only changes. PR triggers intentionally
+have no path filter: a filtered-out workflow can leave a required check pending.
+The stable check name is **ESPHome validation**. It runs after the matrix even
+when a build fails, and explicitly fails on failed, cancelled, or skipped builds.
+This follows GitHub's [required-check guidance](https://docs.github.com/en/pull-requests/how-tos/merge-and-close-pull-requests/troubleshooting-required-status-checks).
+
+The validation job assembles the manifest from both build artifacts, validates
+the complete candidate distribution tree, and uploads `validated-esphome`.
+Build and validation jobs have read-only repository permissions and do not
+persist checkout credentials. A separate publication job requests an App token
+with write access only for successful push or manual runs on `refs/heads/main`.
+It downloads the validated artifact from that same workflow run, revalidates
+the candidate, and retains validation after each rebase. PRs and manual runs on
+other branches cannot enter this job. Concurrency is separate for each PR and
+for each branch; new PR commits cancel only that PR's previous run, while
+`main` runs serialize.
+
+The workflow alone does not prevent a merge or a direct push. On 2026-09-19,
+the repository API reported no `main` branch protection and no rulesets. To
+activate merge enforcement after publishing this workflow:
+
+1. Run a PR targeting `main` and confirm `ESPHome validation` succeeds. Also
+   confirm that its publication job is skipped.
+2. Make **ESPHome validation** from GitHub Actions a required status check for
+   `main`. Require the PR to be current with `main` so the checked merge result
+   includes the latest configuration. If merge queues are introduced, add the
+   `merge_group` workflow trigger before requiring this check in the queue.
+3. Add **Serin Firmware Publisher** to the ruleset bypass list with **Always
+   allow**, so ESPHome, HomeKit and Matter can push generated distribution
+   commits. Their commits cannot receive checks until after publication. Deploy
+   and verify the App-token workflow changes in all three repositories before
+   activating the rule. Keep pre-push validation enabled for these publishers.
+   Use a reviewed PR for manually staged Link releases so a human bypass is not
+   needed.
+
+These repository settings are a separate rollout step; local workflow edits do
+not enable them. To check workflow policy locally with Node 24, install the two
+test-only dependencies outside the checkout, then run the real Actions
+expressions and shell gates against allowed and denied events:
+
+```bash
+workflow_check_dir="$(mktemp -d -t serin-workflow-check.XXXXXX)"
+npm install --prefix "$workflow_check_dir" --ignore-scripts --no-audit --no-fund \
+  @actions/expressions@0.3.61 yaml@2.9.1
+WORKFLOW_TEST_MODULES="$workflow_check_dir/node_modules" \
+  node scripts/check-esphome-workflow.mjs
+```
+
+## Publisher authentication
+
+ESPHome, HomeKit and Matter authenticate distribution pushes with the private
+**Serin Firmware Publisher** GitHub App (`serin-firmware-publisher`), installed
+on `Serin-Labs/serin-cn105` only. Configure these Actions values in each producer
+repository: `Serin-Labs/serin-cn105`, `akifbayram/mitsubishi-cn105-homekit`, and
+`akifbayram/mitsubishi-cn105-matter`.
+
+| Actions setting | Value |
+| --- | --- |
+| Variable `SERIN_PUBLISHER_CLIENT_ID` | The App's Client ID |
+| Secret `SERIN_PUBLISHER_PRIVATE_KEY` | The complete downloaded PEM private key |
+
+Only the guarded deployment job invokes the pinned
+[`actions/create-github-app-token`](https://github.com/actions/create-github-app-token)
+action. It requests `contents: write` for `Serin-Labs/serin-cn105` and supplies
+the installation token to checkout. The action revokes the token when the job
+ends; tokens otherwise expire after one hour. The job's default `GITHUB_TOKEN`
+retains read access. Source-repository release uploads keep their own existing
+`GITHUB_TOKEN` permissions.
+
+App-authenticated pushes trigger distribution validation, including ESPHome's
+generated firmware commits. ESPHome's build trigger excludes `firmware/**`, so
+these commits do not start another firmware build. The old `SERIN_CN105_PAT`
+secrets can be removed after App-authenticated publication has succeeded in
+both external producer repos. Secret configuration and authentication tests
+alone do not deploy workflow edits or activate the required-check ruleset.
+
 ## Rollout order
 
 Land this repo's validator, `scripts/requirements-validation.txt`, pinned public

@@ -59,9 +59,106 @@ Legacy encrypted and plaintext OTA formats are not interchangeable.
 `firmware/link/factory-manifest.json` describes the merged USB images used by
 the Link flasher. Older encrypted updaters need a new factory image to migrate.
 
+### Link updates through an ESPHome controller
+
+The official board configurations require ESPHome **2026.7.4 or newer**.
+Both enable `serin_link.link_ota_credentials`
+in the shared CN105 package. After installing a build with this setting and
+connecting the controller to Wi-Fi, a bonded Link can use
+**Settings → About → Details → Update**. Existing bonds remain valid.
+
+When a bonded Link requests an update, the controller sends its Wi-Fi network
+name and key over the encrypted ESP-NOW connection. Link uses these temporary
+credentials to connect directly to the internet and download its own firmware.
+It needs HTTPS and time synchronization access; the controller does not proxy
+the download. This setting does not update the controller's firmware.
+
+To disable credential sharing, add this override to your device YAML:
+
+```yaml
+serin_link:
+  link_ota_credentials: false
+```
+
+Disabling it hides Link's Update action after the controller is updated.
+Use this override with WPA-Enterprise (`eap:`) networks, which have no shared
+Wi-Fi key to relay. The reusable `serin_link` component remains disabled by
+default in configurations that do not import this package.
+
 ## Building
 
-ESPHome binaries are built from `esphome/` by [`.github/workflows/esphome-firmware.yml`](.github/workflows/esphome-firmware.yml), which recompiles every supported board on each push to those configs and commits the merged binaries and manifest back to `firmware/esphome/`. The ESPHome version is pinned in [`requirements.txt`](requirements.txt) so a rebuild of unchanged configs produces unchanged binaries; Dependabot proposes the bumps. Each build job emits its own manifest fragment and the deploy job merges them, so adding a board is a single matrix entry.
+ESPHome binaries are built from `esphome/` by
+[`.github/workflows/esphome-firmware.yml`](.github/workflows/esphome-firmware.yml).
+Pushes to `main` that change the configs, build requirements, dependency checks,
+or workflow rebuild both boards and publish the merged binaries and
+manifest to `firmware/esphome/`. Each build job emits its own manifest fragment;
+the validation job merges them, so adding a board is a single matrix entry.
+
+Every pull request targeting `main` also builds both boards and validates the
+assembled firmware and manifest. The read-only `ESPHome validation` check fails
+if either build fails, is cancelled, or is skipped. PRs and manual runs on other
+branches produce downloadable artifacts; publication is restricted to successful
+push or manual runs on `main`. Configure `ESPHome validation` as a required check
+after rollout, with a narrowly scoped exception for trusted firmware publishers;
+see [activating the PR gate](docs/release-validation.md#esphome-pull-request-gate).
+
+The release environment uses Linux x86_64 and Python 3.12. ESPHome is pinned
+in [`requirements.txt`](requirements.txt), with its resolved Python dependencies
+constrained by [`requirements-build.lock`](requirements-build.lock). Both board
+configs pin ESP-IDF 5.5.5. Its separate Python environment is constrained by
+[`requirements-idf.lock`](requirements-idf.lock) through `PIP_CONSTRAINT` during
+compilation. CI starts with fresh environments and verifies both installed
+package sets against their locks before accepting the build. The external
+components use these tested revisions:
+
+| Component | Revision |
+| --- | --- |
+| MitsubishiCN105ESPHome | `29133a9b84d826f6a6e9a3025f9c556460b0e0f8` |
+| serin-link-core | `93bf46ffc6b63bba020d01e80e5e0bb4573906d5` (`v0.1.5-beta.1`) |
+
+Shared YAML uses relative `!include` paths, so local builds and dashboard
+imports resolve packages from the same selected checkout. Dashboard discovery
+still points to `main`; pin the root package to a commit if you need to retain
+a particular configuration. These pins control dependency versions, but do not
+guarantee byte-identical binaries: build timestamps and the runner environment
+can still differ.
+
+To validate a checkout in a fresh Python 3.12 environment:
+
+```sh
+python3.12 -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements.txt
+python -m pip check
+python scripts/check-python-lock.py requirements-build.lock
+python scripts/check-esphome-packages.py
+export ESPHOME_ESP_IDF_PREFIX="$(mktemp -d -t serin-esphome-idf.XXXXXX)"
+export PIP_CONSTRAINT="$PWD/requirements-idf.lock"
+esphome clean esphome/serin_esp32c6.yaml
+esphome compile esphome/serin_esp32c6.yaml
+esphome clean esphome/serin_esp32s3.yaml
+esphome compile esphome/serin_esp32s3.yaml
+"$ESPHOME_ESP_IDF_PREFIX"/penvs/*/bin/python scripts/check-python-lock.py requirements-idf.lock
+```
+
+Set the IDF constraints only after installing ESPHome: the two environments
+intentionally use different versions of some tools. The fresh IDF prefix
+prevents a previously cached environment from bypassing the constraints.
+Cleaning each config removes build output tied to a previous IDF environment.
+
+For an intentional dependency update, create a separate fresh Linux/Python 3.12
+environment and install the proposed `esphome==VERSION` directly, without the
+old constraints. Update both board configs' component and framework pins and
+their `min_version` as needed, and coordinate the same pins with the website's
+`esphome/generate-yaml.html`. Run the package-resolution check and compile both
+boards before recording `python -m pip freeze` in `requirements-build.lock`.
+For an IDF dependency update, build with a fresh `ESPHOME_ESP_IDF_PREFIX` and
+without `PIP_CONSTRAINT`, then use that prefix's `penvs/*/bin/python -m pip
+freeze --all` to refresh `requirements-idf.lock`. Retain both locks' explanatory
+headers. Update `requirements.txt`, review every lock change, then repeat the
+commands above in another clean environment. Validate both boards' generated
+website YAML as well. Dependabot proposals require this
+same review; a builder bump alone is insufficient.
 
 HomeKit, Matter, and Serin Link binaries are built elsewhere and published into this repo by their own release workflows.
 

@@ -2,9 +2,9 @@
 #
 # This repo is read straight from `main` by the web installer and by every
 # Serin Link doing an OTA check, so a manifest naming a file that is not there
-# is a broken install the moment it lands. Three of the four products are
-# published by workflows in other repos; those push with SERIN_CN105_PAT rather
-# than the default GITHUB_TOKEN, which is what lets their pushes trigger this.
+# is a broken install the moment it lands. ESPHome, HomeKit and Matter publish
+# with the Serin Firmware Publisher App; its pushes trigger this validation.
+# Each producer also validates the candidate files before pushing them.
 
 name: Validate manifests
 

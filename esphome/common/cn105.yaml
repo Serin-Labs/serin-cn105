@@ -118,3 +118,23 @@ climate:
   #         1: "Indoor"
   #         2: "Remote"
   #         3: "External/CN105"
+
+serin_link:
+  id: serin_link_controller
+  climate_id: hp
+  max_links: ${max_links}
+  # Let bonded Links request this controller's Wi-Fi credentials for updates.
+  # Override with false in your device YAML to disable the relay.
+  link_ota_credentials: true
+  hvac_link: !lambda 'return id(hp).isHeatpumpConnected();'
+  link_sensor:
+    temperature:
+      name: "Serin Link Temperature"
+    humidity:
+      name: "Serin Link Humidity"
+    on_room_temperature:
+      - lambda: 'id(hp).set_remote_temperature(x);'
+  room_temperature_source:
+    name: "Room Temperature Source"
+  pair_button:
+    name: "Pair Serin Link"

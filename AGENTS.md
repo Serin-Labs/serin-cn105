@@ -36,11 +36,11 @@ squash or rebase changes the SHA that pin names.
 | `esphome/` | hand-edited | — |
 | `docs/`, `README.md` | hand-edited | — |
 
-The external workflows push here with the `SERIN_CN105_PAT` fine-grained token.
-Link has no release workflow: a person stages it and pushes it.
-Because those pushes use a PAT rather than the default `GITHUB_TOKEN`, they
-*do* trigger this repo's workflows — which is what makes `validate-manifests`
-meaningful for the products this repo does not build itself.
+ESPHome, HomeKit and Matter publish here using the Serin Firmware Publisher
+GitHub App; its pushes trigger this repo's validation workflows. For credential
+setup, rotation, or ruleset bypass changes, read the Publisher authentication
+section of `docs/release-validation.md`. Link has no release workflow: stage
+its files with the publisher, validate them, and submit a PR for review.
 
 ## The manifest contract
 

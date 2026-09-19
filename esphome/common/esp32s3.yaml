@@ -1,7 +1,7 @@
 esphome:
   name: ${name}
   friendly_name: ${friendly_name}
-  min_version: 2025.11.0
+  min_version: 2026.7.4
   name_add_mac_suffix: true
 
   project:
@@ -13,7 +13,7 @@ esp32:
   flash_size: 8MB
   framework:
     type: esp-idf
-    version: recommended
+    version: 5.5.5
 
 uart:
   id: HP_UART
