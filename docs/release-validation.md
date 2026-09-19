@@ -32,9 +32,15 @@ other branches cannot enter this job. Concurrency is separate for each PR and
 for each branch; new PR commits cancel only that PR's previous run, while
 `main` runs serialize.
 
-The workflow alone does not prevent a merge or a direct push. On 2026-09-19,
-the repository API reported no `main` branch protection and no rulesets. To
-activate merge enforcement after publishing this workflow:
+The workflow alone does not prevent a merge or a direct push. The active
+[Firmware publication gate](https://github.com/Serin-Labs/serin-cn105/rules/23711012)
+ruleset was enabled on 2026-09-19 after successful App-authenticated publication
+from ESPHome, HomeKit and Matter. It requires **ESPHome validation** from the
+GitHub Actions App, requires the PR to be current with `main`, and blocks force
+pushes and deletion of `main`. Only Serin Firmware Publisher has an **Always
+allow** bypass for its validated generated commits.
+
+To restore this enforcement in another repository or after a settings reset:
 
 1. Run a PR targeting `main` and confirm `ESPHome validation` succeeds. Also
    confirm that its publication job is skipped.
@@ -87,9 +93,11 @@ retains read access. Source-repository release uploads keep their own existing
 App-authenticated pushes trigger distribution validation, including ESPHome's
 generated firmware commits. ESPHome's build trigger excludes `firmware/**`, so
 these commits do not start another firmware build. The old `SERIN_CN105_PAT`
-secrets can be removed after App-authenticated publication has succeeded in
-both external producer repos. Secret configuration and authentication tests
-alone do not deploy workflow edits or activate the required-check ruleset.
+secrets were removed from both external producer repos on 2026-09-19 after
+successful hosted publication. All three publishers revoked their installation
+tokens at job completion, and their App pushes triggered successful follow-up
+manifest validation. Secret configuration and local authentication tests alone
+do not establish these hosted results.
 
 ## Rollout order
 
@@ -97,7 +105,8 @@ Land this repo's validator, `scripts/requirements-validation.txt`, pinned public
 key and legacy artifact index on `main` first. Then land the HomeKit and Matter
 workflow changes. Those workflows install validation tools from their
 distribution checkout; missing tools stop the job rather than bypassing the
-check. Their host-test CI also uses this repo's validator from `main`.
+check. Their host-test CI pins an immutable validator revision that has been landed
+on `main`.
 
 The producer workflows permit publication only from version tags (`v*`).
 Manual branch runs build downloadable artifacts without publishing. Pushes
