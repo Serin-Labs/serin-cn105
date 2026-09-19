@@ -52,8 +52,9 @@ rewriting any path inside it. Keep paths relative.
 Two families of shape exist:
 
 **ESP Web Tools shape** (`esphome`, `homekit`, `matter`) — `builds[]` keyed by
-`chipFamily`, each with `parts[]` of `{path, offset}`. `sha256` covers the
-`firmware.bin` part only, not the whole flash image. The installer picks a
+`chipFamily`, each with `parts[]` of `{path, offset, sha256}`. Multipart builds
+require every part hash. The build-level `sha256` retains the app hash for OTA;
+a single merged image can use that hash alone. The installer picks a
 build by matching `chipFamily` against the chip it detected over serial.
 
 **Serin Link shapes** — one `path` per board, plus `size` and `sha256`:

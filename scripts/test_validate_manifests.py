@@ -113,6 +113,48 @@ class ManifestTests(unittest.TestCase):
         path.write_text(json.dumps(manifest))
         return path, manifest
 
+    def write_multipart(self):
+        path, manifest = self.web_path, self.web
+        build = manifest["builds"][0]
+        build["parts"] = []
+        for name, offset in (("bootloader.bin", 0), ("partitions.bin", 32768),
+                             ("boot_app0.bin", 57344), ("firmware.bin", 65536)):
+            asset = path.parent / name
+            if not asset.exists():
+                asset.write_bytes(name.encode())
+            build["parts"].append({"path": name, "offset": offset,
+                                   "sha256": hashlib.sha256(asset.read_bytes()).hexdigest()})
+        path.write_text(json.dumps(manifest))
+        return path, manifest
+
+    def test_multipart_checks_every_file_before_publication(self):
+        path, manifest = self.write_multipart()
+        code, output = self.run_check(path)
+        self.assertEqual(code, 0, output)
+        for part in manifest["builds"][0]["parts"]:
+            with self.subTest(part=part["path"]):
+                asset = path.parent / part["path"]
+                original = asset.read_bytes()
+                asset.write_bytes(b"corrupted download")
+                self.rejects(path, contains="sha256 does not match")
+                asset.write_bytes(original)
+
+    def test_multipart_requires_every_part_hash(self):
+        path, manifest = self.write_multipart()
+        parts = manifest["builds"][0]["parts"]
+        for part in parts:
+            with self.subTest(part=part["path"]):
+                saved = part.pop("sha256")
+                path.write_text(json.dumps(manifest))
+                self.rejects(path, contains="sha256")
+                part["sha256"] = saved
+
+    def test_single_merged_image_checks_optional_part_hash(self):
+        path, manifest = self.web_path, self.web
+        manifest["builds"][0]["parts"][0]["sha256"] = "0" * 64
+        path.write_text(json.dumps(manifest))
+        self.rejects(path, contains="sha256 does not match")
+
     def run_check(self, *args):
         output = io.StringIO()
         if hasattr(validator, "errors"):

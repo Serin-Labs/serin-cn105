@@ -9,7 +9,8 @@
       "parts": [
         {
           "path": "m5atoms3lite.bin",
-          "offset": 0
+          "offset": 0,
+          "sha256": "70238b809b3df14fa0b1619f322458729f66dd4b98d7267f657388692c0546f4"
         }
       ]
     },
@@ -20,7 +21,8 @@
       "parts": [
         {
           "path": "nanoc6.bin",
-          "offset": 0
+          "offset": 0,
+          "sha256": "2315c50a6119e66170b5209ba162f1111f6a1fe1d5a2499a542e56f7ddb8521e"
         }
       ]
     }

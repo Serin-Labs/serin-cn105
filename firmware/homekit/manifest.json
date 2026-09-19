@@ -10,10 +10,26 @@
       "board": "nanoc6",
       "sha256": "5be20df5afe44248ea7d7a164db15887914d81f83b4eddf87904af76badd2611",
       "parts": [
-        { "path": "nanoc6/bootloader.bin", "offset": 0 },
-        { "path": "nanoc6/partitions.bin", "offset": 32768 },
-        { "path": "nanoc6/boot_app0.bin", "offset": 57344 },
-        { "path": "nanoc6/firmware.bin", "offset": 65536 }
+        {
+          "path": "nanoc6/bootloader.bin",
+          "offset": 0,
+          "sha256": "6593cb65548f0ed9d8e030c00231805b7cdcab6e18e317a31d97a1d032d03883"
+        },
+        {
+          "path": "nanoc6/partitions.bin",
+          "offset": 32768,
+          "sha256": "69ced06a47be3589648c2477274e165802801c1e730fd80ba0c79beef4175c86"
+        },
+        {
+          "path": "nanoc6/boot_app0.bin",
+          "offset": 57344,
+          "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f"
+        },
+        {
+          "path": "nanoc6/firmware.bin",
+          "offset": 65536,
+          "sha256": "5be20df5afe44248ea7d7a164db15887914d81f83b4eddf87904af76badd2611"
+        }
       ]
     },
     {
@@ -21,10 +37,26 @@
       "board": "m5atoms3-lite",
       "sha256": "bf616e09bf1d4f4a4c52256ce2aaba6308b569def1dc96d072e59efaca2afea0",
       "parts": [
-        { "path": "m5atoms3-lite/bootloader.bin", "offset": 0 },
-        { "path": "m5atoms3-lite/partitions.bin", "offset": 32768 },
-        { "path": "m5atoms3-lite/boot_app0.bin", "offset": 57344 },
-        { "path": "m5atoms3-lite/firmware.bin", "offset": 65536 }
+        {
+          "path": "m5atoms3-lite/bootloader.bin",
+          "offset": 0,
+          "sha256": "9695c80221d1d5c2b6652da1b80f4ae495b029c26b441b89662bdb897341e151"
+        },
+        {
+          "path": "m5atoms3-lite/partitions.bin",
+          "offset": 32768,
+          "sha256": "ece4c6bf54eac584135cc3c0071d9b57b6cd7ad6eaeeda14e4f380f6ea7bd990"
+        },
+        {
+          "path": "m5atoms3-lite/boot_app0.bin",
+          "offset": 57344,
+          "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f"
+        },
+        {
+          "path": "m5atoms3-lite/firmware.bin",
+          "offset": 65536,
+          "sha256": "bf616e09bf1d4f4a4c52256ce2aaba6308b569def1dc96d072e59efaca2afea0"
+        }
       ]
     }
   ]

@@ -162,7 +162,7 @@ jobs:
             --arg board "$BOARD" \
             --arg sha "$(sha256sum "${NAME}.bin" | cut -d' ' -f1)" \
             --arg path "${NAME}.bin" \
-            '{chipFamily: $family, board: $board, sha256: $sha, parts: [{path: $path, offset: 0}]}' \
+            '{chipFamily: $family, board: $board, sha256: $sha, parts: [{path: $path, offset: 0, sha256: $sha}]}' \
             > "${NAME}.json"
           cat "${NAME}.json"
 

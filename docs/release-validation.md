@@ -190,7 +190,7 @@ manifest directory.
 
 | Format | Required build fields | Artifact checks |
 | --- | --- | --- |
-| ESP Web Tools | `board`, `chipFamily`, `sha256`, nonempty `parts` of `{path, offset}` | Board/family match; sector-aligned, nonoverlapping parts within board flash capacity; SHA-256 of `firmware.bin`, or the sole part for merged images |
+| ESP Web Tools | `board`, `chipFamily`, app `sha256`, nonempty `parts` of `{path, offset, sha256}` | Board/family match; sector-aligned, nonoverlapping parts within board flash capacity; SHA-256 of every part and of the app |
 | Link plaintext OTA | `board` (`link15`/`link21`), `path`, `size`, `sha256` | Actual size and hash; valid ESP32-S3 image; first RSA signature matches the pinned production key; embedded version matches the manifest; fits a 4 MiB OTA slot |
 | Link factory | `board` (`viewe15`/`viewe21`), `path`, `size`, `sha256` | Actual size and hash; bootloader image checksums; partition-table checksum and exact supported layout; signed app at `0x20000` with matching version |
 | Archived Link encrypted OTA | Link OTA fields plus `enc_size` | Exact archived version/build metadata, ciphertext size and ciphertext SHA-256 |
@@ -234,8 +234,19 @@ check because the file must match this archive exactly. New Link releases
 use signed plaintext. Do not regenerate the archive to make a changed image
 pass validation.
 
+Every multipart controller build requires a SHA-256 for each part, including
+the bootloader, partition table and OTA-data image. The build-level hash stays
+the app hash for device OTA compatibility. A single merged image can use only
+its build-level hash; if a part hash is supplied, that hash is checked too.
+Deploy updated producer workflows before enforcing this contract. Generate
+part hashes for existing published files, validate the full distribution, and
+confirm the public mirror serves those manifests before deploying the strict
+browser check. No firmware bytes or release versions change in that migration.
+
 These checks do not establish physical board identity from a signed app,
 prove bootloader/app compatibility, perform a hardware boot test, or validate
-network availability of update URLs. ESP Web Tools manifests provide only
-one build hash: separate bootloader and partition parts have no declared
-cryptographic hashes in this schema. Validate those at the producer too.
+network availability of update URLs.
+
+For this rollout, physical acceptance is limited to Link 1.5 and NanoC6.
+Link 2.1 and AtomS3 Lite receive build and automated checks only, by the
+maintainer's decision. Do not describe those boards as hardware-qualified.

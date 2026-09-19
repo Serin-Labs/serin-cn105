@@ -8,10 +8,26 @@
       "board": "m5atoms3-lite",
       "sha256": "222f4ab7b80f93227c7e44ae8676782db80ad01629521a0ecee006e71945ef55",
       "parts": [
-        { "path": "m5atoms3-lite/bootloader.bin", "offset": 0 },
-        { "path": "m5atoms3-lite/partitions.bin", "offset": 32768 },
-        { "path": "m5atoms3-lite/boot_app0.bin", "offset": 61440 },
-        { "path": "m5atoms3-lite/firmware.bin", "offset": 131072 }
+        {
+          "path": "m5atoms3-lite/bootloader.bin",
+          "offset": 0,
+          "sha256": "721c393dff16b3ce293a6bb4ae74b17448ff2e96ed5c44cc85efabed7b93ea25"
+        },
+        {
+          "path": "m5atoms3-lite/partitions.bin",
+          "offset": 32768,
+          "sha256": "a0fea32a0eb98e2cd8e8b50cf87f340853652db153512c593660f4088294bada"
+        },
+        {
+          "path": "m5atoms3-lite/boot_app0.bin",
+          "offset": 61440,
+          "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f"
+        },
+        {
+          "path": "m5atoms3-lite/firmware.bin",
+          "offset": 131072,
+          "sha256": "222f4ab7b80f93227c7e44ae8676782db80ad01629521a0ecee006e71945ef55"
+        }
       ]
     },
     {
@@ -19,10 +35,26 @@
       "board": "nanoc6",
       "sha256": "e7cfaae3efa6661f8958a0307010b8da6850d214366dfff10405de18a1670776",
       "parts": [
-        { "path": "nanoc6/bootloader.bin", "offset": 0 },
-        { "path": "nanoc6/partitions.bin", "offset": 32768 },
-        { "path": "nanoc6/boot_app0.bin", "offset": 61440 },
-        { "path": "nanoc6/firmware.bin", "offset": 131072 }
+        {
+          "path": "nanoc6/bootloader.bin",
+          "offset": 0,
+          "sha256": "e7974b26b3c8106bdfb06f564f7e34c52b04d9826be2fd86e5b8b825f32e1a77"
+        },
+        {
+          "path": "nanoc6/partitions.bin",
+          "offset": 32768,
+          "sha256": "155945ca669943a19fd49e2fe5be71f72d717d5d500eb49d0e804491372ab60b"
+        },
+        {
+          "path": "nanoc6/boot_app0.bin",
+          "offset": 61440,
+          "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f"
+        },
+        {
+          "path": "nanoc6/firmware.bin",
+          "offset": 131072,
+          "sha256": "e7cfaae3efa6661f8958a0307010b8da6850d214366dfff10405de18a1670776"
+        }
       ]
     }
   ]

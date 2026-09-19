@@ -2,7 +2,8 @@
 """Validate distribution manifests or explicit staged manifests before publishing.
 
 No arguments scans both manifest.json and factory-manifest.json under firmware/.
-ESP Web Tools hashes cover the app part (or the sole merged part). Plaintext
+ESP Web Tools builds retain the app hash and require hashes for every part of
+a multipart image. A single merged image can use its build hash. Plaintext
 Link OTA and factory images require the pinned signer and embedded version.
 Legacy encrypted Link releases must match the archived bytes and metadata;
 their plaintext hash/signature cannot be verified without decryption.
@@ -179,6 +180,12 @@ def check_web_build(build, parent):
     targets = [p for p in files if p.name == "firmware.bin"]
     target = files[0] if len(files) == 1 else targets[0] if len(targets) == 1 else None
     require(target is not None, "cannot identify the part covered by sha256")
+    for part, path in zip(parts, files):
+        if len(parts) > 1 or "sha256" in part:
+            try:
+                check_hash(path.read_bytes(), part.get("sha256"))
+            except ValueError as error:
+                raise ValueError(f"{part['path']}: {error}") from error
     check_hash(target.read_bytes(), build.get("sha256"))
     return set(files)
 
