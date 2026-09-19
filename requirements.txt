@@ -7,4 +7,4 @@
 # via dashboard_import compile with their own ESPHome, for which the contract
 # is `min_version` in esphome/common/esp32*.yaml.
 -c requirements-build.txt
-esphome==2026.7.4
+esphome==2026.9.0
