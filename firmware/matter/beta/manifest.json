@@ -1,0 +1,30 @@
+{
+  "name": "Mitsubishi Matter Controller",
+  "version": "0.5.1-beta.1",
+  "channel": "beta",
+  "new_install_prompt_erase": true,
+  "builds": [
+    {
+      "chipFamily": "ESP32-S3",
+      "board": "m5atoms3-lite",
+      "sha256": "1345682d27993655ad661889176368b153d32e07328c8bc5c3c5273f9a3fbd33",
+      "parts": [
+        { "path": "m5atoms3-lite/bootloader.bin", "offset": 0, "sha256": "c88f7242dde888c1ab254f5293c72fbfa1c12865467d90efd6ed33aa7281dade" },
+        { "path": "m5atoms3-lite/partitions.bin", "offset": 32768, "sha256": "a0fea32a0eb98e2cd8e8b50cf87f340853652db153512c593660f4088294bada" },
+        { "path": "m5atoms3-lite/boot_app0.bin", "offset": 61440, "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f" },
+        { "path": "m5atoms3-lite/firmware.bin", "offset": 131072, "sha256": "1345682d27993655ad661889176368b153d32e07328c8bc5c3c5273f9a3fbd33" }
+      ]
+    },
+    {
+      "chipFamily": "ESP32-C6",
+      "board": "nanoc6",
+      "sha256": "21d05f2bcec89993340e00ee404d34e9533844e0bf0932dd1ed762cd044cb400",
+      "parts": [
+        { "path": "nanoc6/bootloader.bin", "offset": 0, "sha256": "e1bb69e1b8b9649e0cee328450fbdcd2c4ebf16a59db070b1e77862201acd867" },
+        { "path": "nanoc6/partitions.bin", "offset": 32768, "sha256": "155945ca669943a19fd49e2fe5be71f72d717d5d500eb49d0e804491372ab60b" },
+        { "path": "nanoc6/boot_app0.bin", "offset": 61440, "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f" },
+        { "path": "nanoc6/firmware.bin", "offset": 131072, "sha256": "21d05f2bcec89993340e00ee404d34e9533844e0bf0932dd1ed762cd044cb400" }
+      ]
+    }
+  ]
+}
