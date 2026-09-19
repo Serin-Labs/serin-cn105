@@ -98,9 +98,10 @@ Every pull request targeting `main` also builds both boards and validates the
 assembled firmware and manifest. The read-only `ESPHome validation` check fails
 if either build fails, is cancelled, or is skipped. PRs and manual runs on other
 branches produce downloadable artifacts; publication is restricted to successful
-push or manual runs on `main`. Configure `ESPHome validation` as a required check
-after rollout, with a narrowly scoped exception for trusted firmware publishers;
-see [activating the PR gate](docs/release-validation.md#esphome-pull-request-gate).
+push or manual runs on `main`. The active branch ruleset requires
+`ESPHome validation` on up-to-date pull requests and grants bypass only to the
+Serin Firmware Publisher App;
+see [the PR gate](docs/release-validation.md#esphome-pull-request-gate).
 
 The release environment uses Linux x86_64 and Python 3.12. ESPHome is pinned
 in [`requirements.txt`](requirements.txt), with its resolved Python dependencies
