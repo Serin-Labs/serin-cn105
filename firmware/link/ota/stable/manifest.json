@@ -7,13 +7,13 @@
       "board": "link15",
       "path": "link15-app.bin",
       "size": 2691072,
-      "sha256": "7223eb087d3967609860ae077df536be0c74b1807875bbc6406b0d3607e3ddd9"
+      "sha256": "81f7267a8134bf1c4494f7870712877f5cc13714dbd7d4df681672c7f39dc959"
     },
     {
       "board": "link21",
       "path": "link21-app.bin",
       "size": 2691072,
-      "sha256": "5727190bc13141baadc2e86962e2c9ad897ac8d47ce6fe7121c41cf83d1dbb6f"
+      "sha256": "bc8c0e27c7a6d1333decb91ff5f70b271dee89033edd4888eb1eb5bed8aaf1bf"
     }
   ]
 }

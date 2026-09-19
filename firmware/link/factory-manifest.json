@@ -7,13 +7,13 @@
       "board": "viewe15",
       "path": "serin_link_viewe15_factory.bin",
       "size": 2822144,
-      "sha256": "68ddd761149bbd22fc256542d07c25815b761afdf53e17e9c84e8042223aeff0"
+      "sha256": "f9a3dcbd83b9001872b972b11a743900c0093a116dc322369b63859a7c883788"
     },
     {
       "board": "viewe21",
       "path": "serin_link_viewe21_factory.bin",
       "size": 2822144,
-      "sha256": "ed25ea82ee6a0c3d6845be7e8460c4f60013f1dd6db72c14e525a2d9acdcab9c"
+      "sha256": "fd284f94159e18a9bf91805afb034fd51ffd431aceccd71d9b691be0df3cc4ff"
     }
   ]
 }
