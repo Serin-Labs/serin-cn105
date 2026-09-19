@@ -1,19 +1,19 @@
 {
-  "name": "Serin Dial (factory)",
-  "version": "0.1.6",
+  "name": "Serin Link (factory)",
+  "version": "0.1.7",
   "dirty": false,
   "builds": [
     {
       "board": "viewe15",
-      "path": "serin_dial_viewe15_factory.bin",
+      "path": "serin_link_viewe15_factory.bin",
       "size": 2822144,
-      "sha256": "7e7de57b04973908a811ae5e5e2f3ef0e1df83a3c27d5f16e0f76df5edd61a3d"
+      "sha256": "68ddd761149bbd22fc256542d07c25815b761afdf53e17e9c84e8042223aeff0"
     },
     {
       "board": "viewe21",
-      "path": "serin_dial_viewe21_factory.bin",
+      "path": "serin_link_viewe21_factory.bin",
       "size": 2822144,
-      "sha256": "e799817a067f20e9be175b9bc356c3aa0db212e71d3e5e783657db705d9a9ff8"
+      "sha256": "ed25ea82ee6a0c3d6845be7e8460c4f60013f1dd6db72c14e525a2d9acdcab9c"
     }
   ]
 }
