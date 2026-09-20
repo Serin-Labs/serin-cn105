@@ -1,18 +1,18 @@
 {
   "name": "Serin Link (factory)",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "dirty": false,
   "builds": [
     {
       "board": "viewe15",
       "path": "serin_link_viewe15_factory.bin",
       "size": 2822144,
-      "sha256": "f9a3dcbd83b9001872b972b11a743900c0093a116dc322369b63859a7c883788",
+      "sha256": "d8e43c7b8da8131df6ec501a7146bf4346b3bb221452556d0b7e97927f73a612",
       "parts": [
         {
           "path": "serin_link_viewe15_bootloader.bin",
           "offset": 0,
-          "sha256": "32921cca5711444eb86ea3b5eb9350b84d37bfd73ee7ea18232fbf3c75024834"
+          "sha256": "54528b7d76db2988f6bec252d1722a238925ee6fc9e44ee88c901db9f6c27fcd"
         },
         {
           "path": "serin_link_viewe15_partition-table.bin",
@@ -27,7 +27,7 @@
         {
           "path": "serin_link_viewe15_app.bin",
           "offset": 131072,
-          "sha256": "d35a3a60456d2cbc79dba6bfa504b44d4d07241d928e8577447d71a9b5d4b6e5"
+          "sha256": "9f848f1f9f9cae47ba7cb8cd2f67225769cf573032c8a94dbfbf6627bdc7bee8"
         }
       ]
     },
@@ -35,12 +35,12 @@
       "board": "viewe21",
       "path": "serin_link_viewe21_factory.bin",
       "size": 2822144,
-      "sha256": "fd284f94159e18a9bf91805afb034fd51ffd431aceccd71d9b691be0df3cc4ff",
+      "sha256": "16b3cab65da2c0363a18c8bed7546bff7cb41cf549e2997dcd113d8fb6a70d51",
       "parts": [
         {
           "path": "serin_link_viewe21_bootloader.bin",
           "offset": 0,
-          "sha256": "a83e7f1d0274b7a706ccc1354c769b0c9257279e8fc623c00f08f3c359202ff9"
+          "sha256": "0c0d6aabca801a2ae5acf299669a14cc58474d287248300907b3acac11c4cdb1"
         },
         {
           "path": "serin_link_viewe21_partition-table.bin",
@@ -55,7 +55,7 @@
         {
           "path": "serin_link_viewe21_app.bin",
           "offset": 131072,
-          "sha256": "2b41c92deb989a967ce945f801f43bf6cd73fcc81454b5e1dca409e8725df015"
+          "sha256": "6c41b95df46218a099b01800c68fe7888534de05bb975f0fd5338149808522f6"
         }
       ]
     }
