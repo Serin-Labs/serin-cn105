@@ -1,0 +1,64 @@
+{
+  "name": "Serin Link (factory)",
+  "version": "0.1.9-beta.1",
+  "channel": "beta",
+  "dirty": false,
+  "builds": [
+    {
+      "board": "viewe15",
+      "path": "serin_link_viewe15_factory.bin",
+      "size": 2822144,
+      "sha256": "ff1cab5dae4cf1e644beab718aba337928da5417c55c7decb27ee6a3d653c162",
+      "parts": [
+        {
+          "path": "serin_link_viewe15_bootloader.bin",
+          "offset": 0,
+          "sha256": "54528b7d76db2988f6bec252d1722a238925ee6fc9e44ee88c901db9f6c27fcd"
+        },
+        {
+          "path": "serin_link_viewe15_partition-table.bin",
+          "offset": 32768,
+          "sha256": "81104acc28f8049debaaeff6a586a5eb5e51cf71f835f95c54ccc09889fe6830"
+        },
+        {
+          "path": "serin_link_viewe15_otadata.bin",
+          "offset": 61440,
+          "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f"
+        },
+        {
+          "path": "serin_link_viewe15_app.bin",
+          "offset": 131072,
+          "sha256": "53d462cf26a808d6db7f477d1e2108fc5df0475b1fd961243a1ad36706e16948"
+        }
+      ]
+    },
+    {
+      "board": "viewe21",
+      "path": "serin_link_viewe21_factory.bin",
+      "size": 2822144,
+      "sha256": "a9211dc921475310d05351574d7e3592dfa15dc61a7db3095519618b8822ab24",
+      "parts": [
+        {
+          "path": "serin_link_viewe21_bootloader.bin",
+          "offset": 0,
+          "sha256": "0c0d6aabca801a2ae5acf299669a14cc58474d287248300907b3acac11c4cdb1"
+        },
+        {
+          "path": "serin_link_viewe21_partition-table.bin",
+          "offset": 32768,
+          "sha256": "81104acc28f8049debaaeff6a586a5eb5e51cf71f835f95c54ccc09889fe6830"
+        },
+        {
+          "path": "serin_link_viewe21_otadata.bin",
+          "offset": 61440,
+          "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f"
+        },
+        {
+          "path": "serin_link_viewe21_app.bin",
+          "offset": 131072,
+          "sha256": "7df51911af63ee35e8a23b6ca1ac0c72108c8287bc7b89351cae8dfe9a3d6b87"
+        }
+      ]
+    }
+  ]
+}
