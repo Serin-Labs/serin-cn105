@@ -7,7 +7,7 @@ Firmware and ESPHome configurations for controlling Mitsubishi heat pumps via th
 - **`firmware/esphome/`** — Pre-built ESPHome firmware binaries (merged, ready to flash)
 - **`firmware/homekit/`** — Pre-built [HomeKit firmware](https://github.com/akifbayram/mitsubishi-cn105-homekit) binaries
 - **`firmware/matter/`** — Pre-built Matter firmware binaries (Apple Home, Google Home, Alexa)
-- **`firmware/link/`** — Archived encrypted Link OTA and USB factory images; new signed plaintext OTA channels under `ota/`
+- **`firmware/link/`** — Serin Link USB factory images, and signed plaintext OTA channels under `ota/`
 - **`esphome/`** — ESPHome YAML configurations using the [MitsubishiCN105ESPHome](https://github.com/echavet/MitsubishiCN105ESPHome) component
 - **`docs/`** — [ESPHome REST API](docs/esphome-rest-api.md) reference for third-party integrations
 
@@ -45,8 +45,6 @@ Matter selection currently uses the stable manifest only.
 The Serin Link dial is a separate device with its own boards, published under
 the IDs `link15` and `link21`. Its signed plaintext OTA feeds use
 `firmware/link/ota/stable/manifest.json` and `firmware/link/ota/beta/manifest.json`.
-The older encrypted feeds remain at `firmware/link/manifest.json` and
-`firmware/link/beta/manifest.json` for legacy devices.
 
 ## Installation
 
@@ -55,9 +53,9 @@ Flash firmware directly from your browser at [serin-labs.github.io](https://seri
 Current Link firmware uses signed plaintext OTA images. The new feeds must be
 published before firmware using their URLs ships; see the
 [migration and rollout instructions](docs/release-validation.md#link-plaintext-ota-migration).
-Legacy encrypted and plaintext OTA formats are not interchangeable.
-`firmware/link/factory-manifest.json` describes the merged USB images used by
-the Link flasher. Older encrypted updaters need a new factory image to migrate.
+`firmware/link/factory-manifest.json` describes the USB images used by the Link
+flasher: one merged image per board, plus split parts that let a reinstall keep
+the dial's settings. Pre-release USB images live under `firmware/link/factory/beta/`.
 
 ### Link updates through an ESPHome controller
 
@@ -169,8 +167,8 @@ and factory manifests in pull requests and after firmware or validator changes.
 It validates the manifest fields, board IDs, local paths, file hashes and sizes,
 and flash-part ranges. Link plaintext images also need the production signature
 and a matching embedded version. Factory images need the supported partition
-layout and `dirty: false`. Legacy encrypted artifacts must match the archived
-ciphertext hashes and metadata; their plaintext remains unverifiable here.
+layout and `dirty: false`; their optional split parts must reassemble to the
+merged image without covering the settings partition.
 See [the release validation contract](docs/release-validation.md) for the exact
 checks, limitations, and commands for validating staged releases.
 

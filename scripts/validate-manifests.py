@@ -3,10 +3,10 @@
 
 No arguments scans both manifest.json and factory-manifest.json under firmware/.
 ESP Web Tools builds retain the app hash and require hashes for every part of
-a multipart image. A single merged image can use its build hash. Plaintext
-Link OTA and factory images require the pinned signer and embedded version.
-Legacy encrypted Link releases must match the archived bytes and metadata;
-their plaintext hash/signature cannot be verified without decryption.
+a multipart image. A single merged image can use its build hash. Link OTA and
+factory images require the pinned signer and embedded version. A factory build
+may also list split parts for USB installs that keep the settings partition;
+those must reassemble to the merged image byte for byte.
 """
 import argparse
 import contextlib
@@ -31,7 +31,6 @@ except ImportError:
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PUBLIC_KEY = ROOT / "scripts/keys/serin-link-release.pub"
-LEGACY_INDEX = ROOT / "scripts/legacy-link-artifacts.json"
 WEB_BOARDS = {"m5atoms3-lite": "ESP32-S3", "nanoc6": "ESP32-C6"}
 FLASH_SIZE = {"ESP32-S3": 8 * 1024 * 1024, "ESP32-C6": 4 * 1024 * 1024}
 LINK_PARTITIONS = {
@@ -41,6 +40,11 @@ LINK_PARTITIONS = {
     "ota_0": (0, 16, 0x20000, 0x400000, 0),
     "ota_1": (0, 17, 0x420000, 0x400000, 0),
 }
+# Split factory parts: offset -> the most flash the part may cover. nvs
+# (0x9000-0xf000) and phy_init sit between them and must stay unwritten.
+FACTORY_PART_LIMITS = {0: 0x8000, 0x8000: 0x1000, 0xf000: 0x2000, 0x20000: 0x400000}
+FACTORY_CHANNEL_DIRS = {"link/factory-manifest.json": "stable",
+                        "link/factory/beta/factory-manifest.json": "beta"}
 
 
 def require(condition, message):
@@ -156,6 +160,36 @@ def check_factory(data, version):
     check_link_app(data[0x20000:], version)
 
 
+def check_factory_parts(parts, parent, merged):
+    """Split parts let a USB install skip nvs, so they must be the merged image
+    and nothing else: same bytes, fixed offsets, 0xFF everywhere between."""
+    require(isinstance(parts, list) and all(isinstance(p, dict) for p in parts),
+            "parts must be an array of objects")
+    offsets = [p.get("offset") for p in parts]
+    require(all(type(o) is int for o in offsets) and sorted(offsets) == sorted(FACTORY_PART_LIMITS),
+            "factory parts must sit at exactly the bootloader, partition table, otadata and ota_0 offsets")
+    rebuilt = bytearray(b"\xff" * len(merged))
+    files = set()
+    for part in parts:
+        path = asset_path(parent, part.get("path"))
+        require(path not in files, "duplicate part path")
+        files.add(path)
+        data, offset = path.read_bytes(), part["offset"]
+        try:
+            check_hash(data, part.get("sha256"))
+        except ValueError as error:
+            raise ValueError(f"{part['path']}: {error}") from error
+        require(len(data) <= FACTORY_PART_LIMITS[offset], f"{part['path']}: part overruns its flash region")
+        require(merged[offset:offset + len(data)] == data, f"{part['path']}: part differs from the merged image")
+        # A short otadata write would leave a stale boot selection pointing at
+        # ota_1; blank otadata is what makes the bootloader pick the new ota_0.
+        if offset == 0xf000:
+            require(data == b"\xff" * 0x2000, f"{part['path']}: otadata part must be a full blank partition")
+        rebuilt[offset:offset + len(data)] = data
+    require(bytes(rebuilt) == merged, "parts do not reassemble to the merged factory image")
+    return files
+
+
 def check_web_build(build, parent):
     board, family = build.get("board"), build.get("chipFamily")
     require(isinstance(board, str) and board in WEB_BOARDS, "unknown controller board")
@@ -194,30 +228,27 @@ def check_link_build(build, parent, version, kind):
     board = build.get("board")
     require(isinstance(board, str) and board in ({"viewe15", "viewe21"} if kind == "factory" else {"link15", "link21"}),
             "unknown Link board for this manifest format")
-    require(not any(k in build for k in ("parts", "chipFamily")), "mixed manifest formats")
+    require("chipFamily" not in build and (kind == "factory" or "parts" not in build),
+            "mixed manifest formats")
+    require("enc_size" not in build, "the encrypted Link format is retired; releases must use signed plaintext")
     path = asset_path(parent, build.get("path"))
     positive_int(build.get("size"), "size")
     digest_field(build.get("sha256"))
     data = path.read_bytes()
-    if kind == "legacy":
-        positive_int(build.get("enc_size"), "enc_size")
-        require(len(data) == build["enc_size"], "legacy enc_size differs from file size")
-        archived = read_json(LEGACY_INDEX)
-        metadata = {key: build[key] for key in ("board", "path", "size", "enc_size", "sha256")}
-        require(any(record["version"] == version and record["build"] == metadata
-                    and record["ciphertext_sha256"] == hashlib.sha256(data).hexdigest() for record in archived),
-                "legacy encrypted artifact differs from the archive; new releases must use signed plaintext")
-        print(f"  legacy {board}: archived ciphertext verified; plaintext hash/signature/version not reverified")
+    require(len(data) == build["size"], "size differs from file size")
+    check_hash(data, build["sha256"])
+    files = {path}
+    if kind == "factory":
+        check_factory(data, version)
+        if "parts" in build:
+            parts = check_factory_parts(build["parts"], parent, data)
+            require(path not in parts, "duplicate part path")
+            files |= parts
     else:
-        require("enc_size" not in build, "mixed plaintext/encrypted manifest formats")
-        require(len(data) == build["size"], "size differs from file size")
-        check_hash(data, build["sha256"])
-        if kind == "factory":
-            check_factory(data, version)
-        else:
-            check_link_app(data, version)
-        print(f"  ok  {board}: size, sha256, signature and embedded version")
-    return {path}
+        check_link_app(data, version)
+    print(f"  ok  {board}: size, sha256, signature and embedded version"
+          + (", split parts" if len(files) > 1 else ""))
+    return files
 
 
 def validate_manifest(path, allow_dirty=False):
@@ -244,7 +275,6 @@ def validate_manifest(path, allow_dirty=False):
     require(path.name in ("manifest.json", "factory-manifest.json"), "unsupported manifest filename")
     if path.name == "factory-manifest.json":
         kind = "factory"
-        require(channel == "stable", "factory manifests have no beta channel")
         require(type(manifest.get("dirty")) is bool, "factory dirty provenance must be a boolean")
         require(allow_dirty or not manifest["dirty"], "dirty factory build cannot be published")
         if manifest["dirty"]:
@@ -252,7 +282,7 @@ def validate_manifest(path, allow_dirty=False):
     elif any("parts" in build for build in builds):
         kind = "web"
     else:
-        kind = "legacy" if any("enc_size" in build for build in builds) else "link"
+        kind = "link"
     # Distribution paths identify the intended consumer. Do not let changing
     # a Link manifest to a controller shape silently bypass Link verification.
     try:
@@ -262,16 +292,14 @@ def validate_manifest(path, allow_dirty=False):
         product = None  # Explicit staged manifests may be outside the checkout.
     if product == "link":
         require(kind != "web", "controller format is invalid in the Link distribution")
-        if path.name == "manifest.json":
-            if relative.as_posix() in ("link/manifest.json", "link/beta/manifest.json"):
-                require(kind == "legacy", "existing Link feeds require the legacy encrypted format")
-                expected_channel = "beta" if "beta" in relative.parts else "stable"
-            else:
-                require(relative.as_posix() in ("link/ota/stable/manifest.json", "link/ota/beta/manifest.json"),
-                        "unknown Link OTA channel directory")
-                require(kind == "link", "legacy encrypted format is invalid in a plaintext OTA feed")
-                expected_channel = relative.parts[2]
-            require(channel == expected_channel, "manifest channel does not match the channel directory")
+        if kind == "factory":
+            require(relative.as_posix() in FACTORY_CHANNEL_DIRS, "unknown Link factory directory")
+            expected_channel = FACTORY_CHANNEL_DIRS[relative.as_posix()]
+        else:
+            require(relative.as_posix() in ("link/ota/stable/manifest.json", "link/ota/beta/manifest.json"),
+                    "unknown Link OTA channel directory")
+            expected_channel = relative.parts[2]
+        require(channel == expected_channel, "manifest channel does not match the channel directory")
     elif product in ("esphome", "homekit", "matter"):
         require(kind == "web", "Link format is invalid in a controller distribution")
     referenced, boards = set(), set()

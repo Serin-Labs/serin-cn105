@@ -31,8 +31,7 @@ squash or rebase changes the SHA that pin names.
 | `firmware/homekit/`, `firmware/homekit/beta/` | `firmware-release.yml` in `akifbayram/mitsubishi-cn105-homekit` | yes |
 | `firmware/matter/` | the private Matter repo's release workflow | yes |
 | `firmware/link/ota/stable/`, `firmware/link/ota/beta/` | `tools/publish_fw.py --distribution` in `Serin-Labs/serin-link`, run by hand; it stages files and never commits or pushes | yes |
-| `firmware/link/factory-manifest.json` and its images | copied by hand from `serin-link`'s `publish_fw.py --factory` output | yes |
-| `firmware/link/manifest.json`, `firmware/link/beta/`, `firmware/link/link15/`, `firmware/link/link21/` | archived encrypted feeds, frozen; `scripts/legacy-link-artifacts.json` pins their bytes | never change |
+| `firmware/link/factory-manifest.json`, `firmware/link/factory/beta/` and their images | copied by hand from `serin-link`'s `publish_fw.py --factory [--channel beta]` output | yes |
 | `esphome/` | hand-edited | — |
 | `docs/`, `README.md` | hand-edited | — |
 
@@ -64,19 +63,20 @@ build by matching `chipFamily` against the chip it detected over serial.
   on disk, the first signature block must carry the pinned key in
   `scripts/keys/serin-link-release.pub`, and the image's embedded version must
   equal the manifest's. `channel` must match the directory.
-- *Factory* (`firmware/link/factory-manifest.json`, boards `viewe15`/`viewe21`):
-  merged images flashed at `0x0` by the web installer. The validator also
+- *Factory* (`firmware/link/factory-manifest.json` for stable,
+  `firmware/link/factory/beta/factory-manifest.json` for pre-releases, boards
+  `viewe15`/`viewe21`): merged images flashable at `0x0`. The validator also
   checks the bootloader, the exact partition layout, the signed app at
-  `0x20000`, and `dirty: false`.
-- *Archived encrypted OTA* (the frozen paths above): these add `enc_size`, and
-  `sha256` is the hash of the *decrypted* image, so it never matches the file.
-  The validator only checks them against the archive index; their plaintext is
-  unverifiable here.
+  `0x20000`, and `dirty: false`. A build may add `parts` (`{path, offset,
+  sha256}` at `0x0`, `0x8000`, `0xf000`, `0x20000`): the web installer writes
+  those instead of the merged file so the settings partition at `0x9000` is
+  never touched. The parts must reassemble to the merged image byte for byte,
+  and the `0xf000` part must be a full blank otadata partition, which is what
+  makes a dial that last booted `ota_1` start the new app in `ota_0`.
 
-Installed encrypted updaters poll `firmware/link/manifest.json` and
-`firmware/link/beta/manifest.json`; current firmware polls the `ota/` feeds.
-The formats are not interchangeable, so a plaintext image must never land at
-an encrypted path, and the reverse also holds.
+The encrypted pre-0.1.7 feeds (`firmware/link/manifest.json`, `beta/`,
+`link15/`, `link21/`) were retired: that firmware never reached production.
+The validator rejects `enc_size` and any Link OTA manifest outside `ota/`.
 
 Pairing codes are never carried in a manifest. HomeKit and Matter both derive
 theirs from the device MAC, and the installer recomputes them client-side.
@@ -102,8 +102,6 @@ theirs from the device MAC, and the installer recomputes them client-side.
   files arrive by hand, so a leftover one (for example the `serin_dial_*`
   factory images once `serin_link_*` replaces them) is a skipped release step.
   Remove it in the same commit. Elsewhere under `firmware/`, orphans only warn.
-- **Never regenerate `scripts/legacy-link-artifacts.json` to make a changed
-  archived Link file pass.** The index exists to detect exactly that change.
 - **`.ota-stage-*/` at the root is `publish_fw.py --distribution` scratch.**
   It is gitignored; delete one left behind by an interrupted run.
 - **Binaries accumulate in git history.** The pack is checked on every

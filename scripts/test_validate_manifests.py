@@ -7,6 +7,7 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import shutil
 import struct
 import subprocess
 import sys
@@ -75,11 +76,8 @@ class ManifestTests(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         self.addCleanup(tmp.cleanup)
         self.root = Path(tmp.name)
-        self.legacy_index = self.root / "legacy.json"
-        self.legacy_index.write_text("[]")
-        for name, value in (("ROOT", self.root), ("PUBLIC_KEY", self.keys / "release.pub"),
-                            ("LEGACY_INDEX", self.legacy_index)):
-            p = patch.object(validator, name, value, create=True)
+        for name, value in (("ROOT", self.root), ("PUBLIC_KEY", self.keys / "release.pub")):
+            p = patch.object(validator, name, value)
             p.start()
             self.addCleanup(p.stop)
         self.web_path, self.web = self.write_web()
@@ -95,9 +93,9 @@ class ManifestTests(unittest.TestCase):
         path.write_text(json.dumps(manifest))
         return path, manifest
 
-    def write_link(self, factory=False, data=None, legacy=False):
+    def write_link(self, factory=False, data=None):
         folder = self.root / "firmware/link"
-        if not factory and not legacy:
+        if not factory:
             folder /= "ota/stable"
         folder.mkdir(parents=True, exist_ok=True)
         if data is None:
@@ -329,32 +327,112 @@ class ManifestTests(unittest.TestCase):
         self.web_path.write_text(json.dumps(manifest))
         self.rejects(contains="overlap")
 
-    def test_legacy_encrypted_artifact_must_match_archived_bytes_and_metadata(self):
-        path, manifest = self.write_link(data=b"ciphertext", legacy=True)
-        build = manifest["builds"][0]
-        build.update(size=8192, enc_size=10, sha256="1" * 64)
-        path.write_text(json.dumps(manifest))
-        self.legacy_index.write_text(json.dumps([{"version": "0.1.6", "build": build,
-                                                  "ciphertext_sha256": hashlib.sha256(b"ciphertext").hexdigest()}]))
-        code, output = self.run_check()
-        self.assertEqual(code, 0, output)
-        self.assertIn("legacy", output.lower())
-        (path.parent / build["path"]).write_bytes(b"bad-bytes!")
-        self.rejects(contains="legacy")
-        (path.parent / build["path"]).write_bytes(b"ciphertext")
-        build["sha256"] = "2" * 64
-        path.write_text(json.dumps(manifest))
-        self.rejects(contains="legacy")
-
-    def test_adding_enc_size_cannot_bypass_signature_checks(self):
+    def test_encrypted_format_is_retired_and_cannot_bypass_signature_checks(self):
         path, manifest = self.write_link(data=self.wrong_app)
         manifest["builds"][0]["enc_size"] = len(self.wrong_app)
         path.write_text(json.dumps(manifest))
-        self.rejects(contains="legacy")
+        self.rejects(contains="retired")
 
-    def test_plaintext_cannot_replace_the_legacy_encrypted_feed(self):
-        self.write_link(legacy=True)
-        self.rejects(contains="legacy encrypted")
+    def test_retired_encrypted_feed_paths_are_rejected(self):
+        path, manifest = self.write_link()
+        old = self.root / "firmware/link/manifest.json"
+        (old.parent / manifest["builds"][0]["path"]).write_bytes(self.app)
+        old.write_text(json.dumps(manifest))
+        self.rejects(contains="unknown Link OTA channel directory")
+
+    def write_factory_parts(self, folder=None, data=None, version="0.1.6"):
+        """A factory manifest whose build also lists the split parts, sliced
+        from the merged image the way publish_fw.py does."""
+        folder = folder or self.root / "firmware/link"
+        folder.mkdir(parents=True, exist_ok=True)
+        data = data if data is not None else self.factory_bytes()
+        (folder / "factory.bin").write_bytes(data)
+        table_end = 0x8000 + data[0x8000:0x9000].index(b"\xeb\xeb") + 32
+        slices = {"bootloader.bin": (0, data[:len(self.bootloader)]),
+                  "partition-table.bin": (0x8000, data[0x8000:table_end]),
+                  "otadata-blank.bin": (0xf000, data[0xf000:0x11000]),
+                  "app.bin": (0x20000, data[0x20000:])}
+        parts = []
+        for name, (offset, chunk) in slices.items():
+            (folder / name).write_bytes(chunk)
+            parts.append({"path": name, "offset": offset, "sha256": hashlib.sha256(chunk).hexdigest()})
+        manifest = {"name": "Link", "version": version, "dirty": False, "builds": [{
+            "board": "viewe15", "path": "factory.bin", "size": len(data),
+            "sha256": hashlib.sha256(data).hexdigest(), "parts": parts}]}
+        if "-" in version:
+            manifest["channel"] = "beta"
+        path = folder / "factory-manifest.json"
+        path.write_text(json.dumps(manifest))
+        return path, manifest
+
+    def test_factory_split_parts_validate_and_are_not_orphans(self):
+        self.write_factory_parts()
+        code, output = self.run_check()
+        self.assertEqual(code, 0, output)
+        self.assertIn("split parts", output)
+        self.assertNotIn("not referenced", output)
+
+    def test_factory_part_must_match_the_merged_image(self):
+        path, manifest = self.write_factory_parts()
+        other = self.next_app
+        (path.parent / "app.bin").write_bytes(other)
+        manifest["builds"][0]["parts"][3]["sha256"] = hashlib.sha256(other).hexdigest()
+        path.write_text(json.dumps(manifest))
+        self.rejects(contains="differs from the merged image")
+
+    def test_factory_parts_cannot_write_over_the_settings_partition(self):
+        path, manifest = self.write_factory_parts()
+        part = manifest["builds"][0]["parts"][2]
+        part["offset"] = 0x9000
+        path.write_text(json.dumps(manifest))
+        self.rejects(contains="offsets")
+        # A bootloader part padded on through nvs keeps a legal offset but not a legal reach.
+        path, manifest = self.write_factory_parts()
+        padded = self.factory_bytes()[:0xa000]
+        (path.parent / "bootloader.bin").write_bytes(padded)
+        manifest["builds"][0]["parts"][0]["sha256"] = hashlib.sha256(padded).hexdigest()
+        path.write_text(json.dumps(manifest))
+        self.rejects(contains="overruns")
+
+    def test_factory_parts_must_cover_everything_the_merged_image_writes(self):
+        path, manifest = self.write_factory_parts()
+        short = (path.parent / "app.bin").read_bytes()[:-4096]
+        (path.parent / "app.bin").write_bytes(short)
+        manifest["builds"][0]["parts"][3]["sha256"] = hashlib.sha256(short).hexdigest()
+        path.write_text(json.dumps(manifest))
+        self.rejects(contains="reassemble")
+
+    def test_factory_otadata_part_must_blank_the_whole_partition(self):
+        path, manifest = self.write_factory_parts()
+        (path.parent / "otadata-blank.bin").write_bytes(b"\xff" * 0x1000)
+        manifest["builds"][0]["parts"][2]["sha256"] = hashlib.sha256(b"\xff" * 0x1000).hexdigest()
+        path.write_text(json.dumps(manifest))
+        self.rejects(contains="otadata")
+
+    def test_factory_parts_require_hashes(self):
+        path, manifest = self.write_factory_parts()
+        del manifest["builds"][0]["parts"][0]["sha256"]
+        path.write_text(json.dumps(manifest))
+        self.rejects(contains="sha256")
+
+    def test_ota_manifest_cannot_carry_parts(self):
+        path, manifest = self.write_link()
+        manifest["builds"][0]["parts"] = []
+        path.write_text(json.dumps(manifest))
+        self.rejects()
+
+    def test_beta_factory_lives_only_in_its_channel_directory(self):
+        beta_app = self.make_app(version=b"0.1.7-beta.1")
+        data = self.factory_bytes(app=beta_app)
+        self.write_factory_parts(self.root / "firmware/link/factory/beta", data, "0.1.7-beta.1")
+        code, output = self.run_check()
+        self.assertEqual(code, 0, output)
+        shutil.rmtree(self.root / "firmware/link/factory")
+        self.write_factory_parts(data=data, version="0.1.7-beta.1")
+        self.rejects(contains="channel directory")
+        shutil.rmtree(self.root / "firmware/link")
+        self.write_factory_parts(self.root / "firmware/link/factory/nightly")
+        self.rejects(contains="unknown Link factory directory")
 
     def test_plaintext_channel_metadata_must_match_its_directory(self):
         path, manifest = self.write_link()
