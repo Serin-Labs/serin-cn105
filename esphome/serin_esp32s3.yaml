@@ -26,6 +26,7 @@ packages:
   cn105: !include common/cn105.yaml
   wifi: !include common/wifi.yaml
   web_server: !include common/web_server.yaml
+  bluetooth_proxy: !include common/bluetooth_proxy.yaml
 
   # To enable remote temperature sensor, uncomment the line below and set remote_temp_sensor above
   # remote_temp: !include common/remote_temp.yaml

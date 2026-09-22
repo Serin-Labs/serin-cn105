@@ -57,6 +57,20 @@ published before firmware using their URLs ships; see the
 flasher: one merged image per board, plus split parts that let a reinstall keep
 the dial's settings. Pre-release USB images live under `firmware/link/factory/beta/`.
 
+### Bluetooth proxy
+
+Both official ESPHome board configurations, and therefore the prebuilt binaries
+the web installer flashes, run as a Home Assistant
+[Bluetooth proxy](https://esphome.io/components/bluetooth_proxy/) with active
+connections. The proxy comes from `esphome/common/bluetooth_proxy.yaml`. Serin
+Link uses ESP-NOW over Wi-Fi, so the proxy does not affect Link bonds. To turn
+the proxy off in an adopted device, add these overrides to your device YAML:
+
+```yaml
+esp32_ble_tracker: !remove
+bluetooth_proxy: !remove
+```
+
 ### Link updates through an ESPHome controller
 
 The official board configurations require ESPHome **2026.7.4 or newer**.
