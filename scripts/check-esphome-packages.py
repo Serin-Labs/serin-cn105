@@ -32,6 +32,9 @@ class PackageRevisionTests(unittest.TestCase):
                     merged = packages.merge_packages(packages.do_packages_pass(raw))
                 self.assertEqual(merged["esp32"]["board"], hardware)
                 self.assertTrue(merged["serin_link"]["link_ota_credentials"])
+                # The prebuilt web-flasher firmware ships as a Bluetooth proxy.
+                self.assertIn("esp32_ble_tracker", merged)
+                self.assertTrue(merged["bluetooth_proxy"]["active"])
 
     def test_dashboard_import_resolves_includes_inside_the_selected_revision(self):
         for board in BOARDS:

@@ -1,0 +1,16 @@
+# Home Assistant Bluetooth proxy, included by both prebuilt board configs.
+#
+# Kept out of the board fragments on purpose: serin-labs.github.io vendors
+# esphome/common/ and its YAML generator appends its own bluetooth_proxy block
+# to the board fragment when the user ticks the option. A proxy baked into
+# esp32c6.yaml or esp32s3.yaml would make that a duplicate key. The generator
+# maps fragments by filename, so it never reads this file.
+#
+# The id must not be `bluetooth_proxy`: ESPHome rejects an id that matches the
+# component name. Serin Link uses ESP-NOW over Wi-Fi, not BLE, so the two do
+# not share the Bluetooth controller.
+esp32_ble_tracker:
+
+bluetooth_proxy:
+  id: ble_proxy
+  active: true
