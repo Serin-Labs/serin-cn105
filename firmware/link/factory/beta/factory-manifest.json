@@ -1,19 +1,19 @@
 {
   "name": "Serin Link (factory)",
-  "version": "0.1.9-beta.1",
+  "version": "0.1.9-beta.2",
   "channel": "beta",
   "dirty": false,
   "builds": [
     {
       "board": "viewe15",
       "path": "serin_link_viewe15_factory.bin",
-      "size": 2822144,
-      "sha256": "ff1cab5dae4cf1e644beab718aba337928da5417c55c7decb27ee6a3d653c162",
+      "size": 2887680,
+      "sha256": "cbf31e9cea5897f61a70333722968de13854d715bcc1210434bb8226e769b6ba",
       "parts": [
         {
           "path": "serin_link_viewe15_bootloader.bin",
           "offset": 0,
-          "sha256": "54528b7d76db2988f6bec252d1722a238925ee6fc9e44ee88c901db9f6c27fcd"
+          "sha256": "bf19d857f094f7aa2e9a91fa55b2c027e9ac14bda5204fae62e9d9d14fd568f7"
         },
         {
           "path": "serin_link_viewe15_partition-table.bin",
@@ -28,7 +28,7 @@
         {
           "path": "serin_link_viewe15_app.bin",
           "offset": 131072,
-          "sha256": "53d462cf26a808d6db7f477d1e2108fc5df0475b1fd961243a1ad36706e16948"
+          "sha256": "2843a6e01c4c73714713dcb4870ada6aeed20a8941e6b3707916b5c7187fb29d"
         }
       ]
     },
@@ -36,12 +36,12 @@
       "board": "viewe21",
       "path": "serin_link_viewe21_factory.bin",
       "size": 2822144,
-      "sha256": "a9211dc921475310d05351574d7e3592dfa15dc61a7db3095519618b8822ab24",
+      "sha256": "64f43b7d3827f85e4085b0c3f8072f0e096025878a6eb8c20a0ce7b3ac35996d",
       "parts": [
         {
           "path": "serin_link_viewe21_bootloader.bin",
           "offset": 0,
-          "sha256": "0c0d6aabca801a2ae5acf299669a14cc58474d287248300907b3acac11c4cdb1"
+          "sha256": "b46a0439b0436c411a9672cc3746078f784f970d525278342b3b5ec8744b7adc"
         },
         {
           "path": "serin_link_viewe21_partition-table.bin",
@@ -56,7 +56,7 @@
         {
           "path": "serin_link_viewe21_app.bin",
           "offset": 131072,
-          "sha256": "7df51911af63ee35e8a23b6ca1ac0c72108c8287bc7b89351cae8dfe9a3d6b87"
+          "sha256": "b64e5caffb7ecc88e1b4ae2fb05742716ebae059e3714649b7a8afdb54282eee"
         }
       ]
     }
