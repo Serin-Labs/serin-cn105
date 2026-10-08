@@ -1,18 +1,18 @@
 {
   "name": "Serin Link (factory)",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "dirty": false,
   "builds": [
     {
       "board": "viewe15",
       "path": "serin_link_viewe15_factory.bin",
-      "size": 2822144,
-      "sha256": "d8e43c7b8da8131df6ec501a7146bf4346b3bb221452556d0b7e97927f73a612",
+      "size": 2887680,
+      "sha256": "d1690e12c46da0508f4ee8b9c8bab2a143b5e51eebeb6a9804d2e4d082f4a5b8",
       "parts": [
         {
           "path": "serin_link_viewe15_bootloader.bin",
           "offset": 0,
-          "sha256": "54528b7d76db2988f6bec252d1722a238925ee6fc9e44ee88c901db9f6c27fcd"
+          "sha256": "87008c9d54be685cfa0ea20ea26baace7e31c871109ee9a5c254c29e88b0116b"
         },
         {
           "path": "serin_link_viewe15_partition-table.bin",
@@ -27,7 +27,7 @@
         {
           "path": "serin_link_viewe15_app.bin",
           "offset": 131072,
-          "sha256": "9f848f1f9f9cae47ba7cb8cd2f67225769cf573032c8a94dbfbf6627bdc7bee8"
+          "sha256": "c88ade13383e3a742c4dd36da08ec9c256f2045e270f0f985550b585f76af6e6"
         }
       ]
     },
@@ -35,12 +35,12 @@
       "board": "viewe21",
       "path": "serin_link_viewe21_factory.bin",
       "size": 2822144,
-      "sha256": "16b3cab65da2c0363a18c8bed7546bff7cb41cf549e2997dcd113d8fb6a70d51",
+      "sha256": "ce9315b58a355e33edf667aeb8b729dda980f00610c18192c97eaf20feaf10cf",
       "parts": [
         {
           "path": "serin_link_viewe21_bootloader.bin",
           "offset": 0,
-          "sha256": "0c0d6aabca801a2ae5acf299669a14cc58474d287248300907b3acac11c4cdb1"
+          "sha256": "deaa29900c9a13b0b5e1b93c57d15da276e4c6b52f1b7e2858d11d13d6ef2ffb"
         },
         {
           "path": "serin_link_viewe21_partition-table.bin",
@@ -55,7 +55,7 @@
         {
           "path": "serin_link_viewe21_app.bin",
           "offset": 131072,
-          "sha256": "6c41b95df46218a099b01800c68fe7888534de05bb975f0fd5338149808522f6"
+          "sha256": "263f220fa3a8d8b28b4557f41e7ab6727596bf4ca6fac7816a6081c52cbf5cd3"
         }
       ]
     }
