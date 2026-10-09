@@ -1,6 +1,6 @@
 {
   "name": "Serin Link (factory)",
-  "version": "0.1.9-beta.2",
+  "version": "0.1.11-beta.1",
   "channel": "beta",
   "dirty": false,
   "builds": [
@@ -8,12 +8,12 @@
       "board": "viewe15",
       "path": "serin_link_viewe15_factory.bin",
       "size": 2887680,
-      "sha256": "cbf31e9cea5897f61a70333722968de13854d715bcc1210434bb8226e769b6ba",
+      "sha256": "a5e7ac8f225f54ea4f6788c9084f599b1d656f5cdbc89793c7e9d8b73037a26c",
       "parts": [
         {
           "path": "serin_link_viewe15_bootloader.bin",
           "offset": 0,
-          "sha256": "bf19d857f094f7aa2e9a91fa55b2c027e9ac14bda5204fae62e9d9d14fd568f7"
+          "sha256": "fe106747d9d8887178fa27fd675ea9752818330461d3377b8255fa25ebb76715"
         },
         {
           "path": "serin_link_viewe15_partition-table.bin",
@@ -28,7 +28,7 @@
         {
           "path": "serin_link_viewe15_app.bin",
           "offset": 131072,
-          "sha256": "2843a6e01c4c73714713dcb4870ada6aeed20a8941e6b3707916b5c7187fb29d"
+          "sha256": "c09f6aaef5dc511555cd4398cf7a825a328e81fa5b4aa0c91f56cfc7f602568c"
         }
       ]
     },
@@ -36,12 +36,12 @@
       "board": "viewe21",
       "path": "serin_link_viewe21_factory.bin",
       "size": 2822144,
-      "sha256": "64f43b7d3827f85e4085b0c3f8072f0e096025878a6eb8c20a0ce7b3ac35996d",
+      "sha256": "4ff5263b64e6a357fbb6439eb1daf23554c711df96a1f932ebdf083e6664e419",
       "parts": [
         {
           "path": "serin_link_viewe21_bootloader.bin",
           "offset": 0,
-          "sha256": "b46a0439b0436c411a9672cc3746078f784f970d525278342b3b5ec8744b7adc"
+          "sha256": "05ca6588ee88734fcc47e092fcdd1455c6c70b151d1370f2d2f84b09a779277d"
         },
         {
           "path": "serin_link_viewe21_partition-table.bin",
@@ -56,7 +56,7 @@
         {
           "path": "serin_link_viewe21_app.bin",
           "offset": 131072,
-          "sha256": "b64e5caffb7ecc88e1b4ae2fb05742716ebae059e3714649b7a8afdb54282eee"
+          "sha256": "0e6f710c5340d1a578963da3dcae7527268a297978787beae7292b462337dddd"
         }
       ]
     }
