@@ -1,19 +1,19 @@
 {
   "name": "Serin Link",
-  "version": "0.1.9-beta.2",
+  "version": "0.1.11-beta.1",
   "channel": "beta",
   "builds": [
     {
       "board": "link15",
       "path": "link15-app.bin",
       "size": 2756608,
-      "sha256": "2843a6e01c4c73714713dcb4870ada6aeed20a8941e6b3707916b5c7187fb29d"
+      "sha256": "c09f6aaef5dc511555cd4398cf7a825a328e81fa5b4aa0c91f56cfc7f602568c"
     },
     {
       "board": "link21",
       "path": "link21-app.bin",
       "size": 2691072,
-      "sha256": "b64e5caffb7ecc88e1b4ae2fb05742716ebae059e3714649b7a8afdb54282eee"
+      "sha256": "0e6f710c5340d1a578963da3dcae7527268a297978787beae7292b462337dddd"
     }
   ]
 }
