@@ -1,29 +1,29 @@
 {
   "name": "Mitsubishi Matter Controller",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "channel": "stable",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-S3",
       "board": "m5atoms3-lite",
-      "sha256": "75830f9a8cbaf6f7d6ea43cedf46032a1387b6692db215f6c931596d344bca4f",
+      "sha256": "56f1d18a3d36896c3bbfe138ca12f0e7d3b5946ed5737048cde52b11dd6373d2",
       "parts": [
-        { "path": "m5atoms3-lite/bootloader.bin", "offset": 0, "sha256": "a4c3b33e846640494d96f14401c4338898b89bceda2537d87c825a3eba0435ee" },
+        { "path": "m5atoms3-lite/bootloader.bin", "offset": 0, "sha256": "4c18541cd3647cdc618ac86983764d2d79d909a27dc854b807f858f75f1d0f1c" },
         { "path": "m5atoms3-lite/partitions.bin", "offset": 32768, "sha256": "a0fea32a0eb98e2cd8e8b50cf87f340853652db153512c593660f4088294bada" },
         { "path": "m5atoms3-lite/boot_app0.bin", "offset": 61440, "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f" },
-        { "path": "m5atoms3-lite/firmware.bin", "offset": 131072, "sha256": "75830f9a8cbaf6f7d6ea43cedf46032a1387b6692db215f6c931596d344bca4f" }
+        { "path": "m5atoms3-lite/firmware.bin", "offset": 131072, "sha256": "56f1d18a3d36896c3bbfe138ca12f0e7d3b5946ed5737048cde52b11dd6373d2" }
       ]
     },
     {
       "chipFamily": "ESP32-C6",
       "board": "nanoc6",
-      "sha256": "b59994ad92948c1898008df729901f1f58894b9428e77bd9254cdcc9ec6296d8",
+      "sha256": "86d1d493c0f8d057ae827eaeff90332432ac5de6a30180323078684c145e7ea2",
       "parts": [
-        { "path": "nanoc6/bootloader.bin", "offset": 0, "sha256": "ae6db28def8707cb6b1d54a508a0c8d7e384014e4d2e9afb9dc89124a91dccfc" },
+        { "path": "nanoc6/bootloader.bin", "offset": 0, "sha256": "3fb2047b10f616f78715d1b5404f91588356ea99e3c88308d8c29cfe4e0f3f8b" },
         { "path": "nanoc6/partitions.bin", "offset": 32768, "sha256": "155945ca669943a19fd49e2fe5be71f72d717d5d500eb49d0e804491372ab60b" },
         { "path": "nanoc6/boot_app0.bin", "offset": 61440, "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f" },
-        { "path": "nanoc6/firmware.bin", "offset": 131072, "sha256": "b59994ad92948c1898008df729901f1f58894b9428e77bd9254cdcc9ec6296d8" }
+        { "path": "nanoc6/firmware.bin", "offset": 131072, "sha256": "86d1d493c0f8d057ae827eaeff90332432ac5de6a30180323078684c145e7ea2" }
       ]
     }
   ]
