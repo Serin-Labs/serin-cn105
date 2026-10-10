@@ -25,7 +25,7 @@ colorama==0.4.6
 crcmod==1.7
 cryptography==49.0.0
 dbus-fast==5.0.22
-esphome==2026.7.4
+esphome==2026.9.0
 esphome-glyphsets==0.2.0
 esptool==5.3.1
 filelock==3.32.0
