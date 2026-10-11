@@ -128,7 +128,7 @@ components use these tested revisions:
 | Component | Revision |
 | --- | --- |
 | MitsubishiCN105ESPHome | `29133a9b84d826f6a6e9a3025f9c556460b0e0f8` |
-| serin-link-core | `93bf46ffc6b63bba020d01e80e5e0bb4573906d5` (`v0.1.5-beta.1`) |
+| serin-link-core | `290f2a6d8946bed179231559800f8d5f742bc6f4` (`v0.1.5`) |
 
 Shared YAML uses relative `!include` paths, so local builds and dashboard
 imports resolve packages from the same selected checkout. Dashboard discovery

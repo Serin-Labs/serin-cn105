@@ -18,7 +18,7 @@ dashboard_import:
 
 external_components:
   - source: github://echavet/MitsubishiCN105ESPHome@29133a9b84d826f6a6e9a3025f9c556460b0e0f8
-  - source: github://Serin-Labs/serin-link-core@93bf46ffc6b63bba020d01e80e5e0bb4573906d5
+  - source: github://Serin-Labs/serin-link-core@290f2a6d8946bed179231559800f8d5f742bc6f4
     components: [serin_link]
 
 packages:
