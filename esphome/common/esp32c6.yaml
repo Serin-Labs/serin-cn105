@@ -37,12 +37,20 @@ sensor:
     update_interval: 60s
     internal: true
 
+# The NanoC6 feeds its RGB LED through a load switch enabled by GPIO19.
+power_supply:
+  - id: rgb_power
+    pin: GPIO19
+    enable_time: 5ms
+    keep_on_time: 10ms
+
 light:
   - platform: esp32_rmt_led_strip
     rgb_order: GRB
-    pin: 20
-    num_leds: 4
+    pin: GPIO20
+    num_leds: 1
     chipset: ws2812
+    power_supply: rgb_power
     id: led
     name: "Led"
 
