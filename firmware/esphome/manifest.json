@@ -5,24 +5,24 @@
     {
       "chipFamily": "ESP32-S3",
       "board": "m5atoms3-lite",
-      "sha256": "8cd23e3a25fa71d78d238fa2bb366c1e6eb81d846701cf97865fe700b9cd58e7",
+      "sha256": "7e9ee90fbbef60f6576d031c110278d25f0ad61ebcac45d2913bc04eba4624bb",
       "parts": [
         {
           "path": "m5atoms3lite.bin",
           "offset": 0,
-          "sha256": "8cd23e3a25fa71d78d238fa2bb366c1e6eb81d846701cf97865fe700b9cd58e7"
+          "sha256": "7e9ee90fbbef60f6576d031c110278d25f0ad61ebcac45d2913bc04eba4624bb"
         }
       ]
     },
     {
       "chipFamily": "ESP32-C6",
       "board": "nanoc6",
-      "sha256": "013333c83dbefe8390326d2210362e64edcb7e3214358278c555f3511df80668",
+      "sha256": "eb52dc33220936e94262842caafa123416f258cfc9023818f199d7494027cb9b",
       "parts": [
         {
           "path": "nanoc6.bin",
           "offset": 0,
-          "sha256": "013333c83dbefe8390326d2210362e64edcb7e3214358278c555f3511df80668"
+          "sha256": "eb52dc33220936e94262842caafa123416f258cfc9023818f199d7494027cb9b"
         }
       ]
     }
