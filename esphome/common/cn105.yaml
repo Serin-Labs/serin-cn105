@@ -128,10 +128,9 @@ serin_link:
   link_ota_credentials: true
   hvac_link: !lambda 'return id(hp).isHeatpumpConnected();'
   link_sensor:
-    temperature:
-      name: "Serin Link Temperature"
-    humidity:
-      name: "Serin Link Humidity"
+    # Temperature and Humidity for each Link, on the Link's own device when
+    # the board config names one in link_devices:.
+    links:
     on_room_temperature:
       - lambda: 'id(hp).set_remote_temperature(x);'
   room_temperature_source:

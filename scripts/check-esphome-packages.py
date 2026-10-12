@@ -15,11 +15,28 @@ from esphome.core import CORE
 
 ROOT = Path(__file__).resolve().parents[1]
 BOARDS = {"esp32c6": "esp32-c6-devkitm-1", "esp32s3": "esp32-s3-devkitc-1"}
+LINK_DEVICE = {"id": "link1", "name": "Serin Link 1"}
 
 
 class PackageRevisionTests(unittest.TestCase):
     def setUp(self):
         CORE.reset()
+
+    def assertLinkIsItsOwnDevice(self, merged):
+        # ESPHome compiles sub-devices in from esphome: devices:, and
+        # serin_link cannot add one when a Link pairs. Without the declaration
+        # Home Assistant lists no device for the Link and its entities sit
+        # flat on the controller.
+        self.assertEqual(merged["esphome"].get("devices"), [LINK_DEVICE])
+        link = merged["serin_link"]
+        # One device per slot, in slot order: the count and the list agree.
+        self.assertEqual(link.get("link_devices"), [LINK_DEVICE["id"]])
+        self.assertEqual(merged["substitutions"]["max_links"], "1")
+        # A bare links: puts Temperature and Humidity on that device. The flat
+        # pair would be the same two readings on the controller as well.
+        self.assertIn("links", link["link_sensor"])
+        self.assertNotIn("temperature", link["link_sensor"])
+        self.assertNotIn("humidity", link["link_sensor"])
 
     def test_local_build_never_fetches_shared_packages_from_main(self):
         for board, hardware in BOARDS.items():
@@ -35,6 +52,7 @@ class PackageRevisionTests(unittest.TestCase):
                 # The prebuilt web-flasher firmware ships as a Bluetooth proxy.
                 self.assertIn("esp32_ble_tracker", merged)
                 self.assertTrue(merged["bluetooth_proxy"]["active"])
+                self.assertLinkIsItsOwnDevice(merged)
 
     def test_dashboard_import_resolves_includes_inside_the_selected_revision(self):
         for board in BOARDS:
@@ -55,6 +73,7 @@ class PackageRevisionTests(unittest.TestCase):
                 self.assertEqual(fetch.call_args.kwargs["ref"], "selected-release-revision")
                 self.assertTrue(merged["serin_link"]["link_ota_credentials"])
                 self.assertEqual(merged["wifi"]["ap"]["password"], "serinlabs")
+                self.assertLinkIsItsOwnDevice(merged)
 
 
 if __name__ == "__main__":

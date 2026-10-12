@@ -4,6 +4,17 @@ substitutions:
   max_links: "1"
   # remote_temp_sensor: sensor.my_room_temperature  # Uncomment and set if using remote_temp
 
+# The Serin Link is its own device in Home Assistant. ESPHome compiles
+# sub-devices in from this list (serin_link cannot add one when a Link pairs),
+# and link_devices: puts the Link's entities on it. One device per max_links.
+esphome:
+  devices:
+    - id: link1
+      name: "Serin Link 1"
+
+serin_link:
+  link_devices: [link1]
+
 logger:
   level: INFO
 
