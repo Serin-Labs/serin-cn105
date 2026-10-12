@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from esphome import yaml_util
 from esphome.components import packages
+from esphome.config import resolve_extend_remove
 from esphome.core import CORE
 
 
@@ -38,6 +39,25 @@ class PackageRevisionTests(unittest.TestCase):
         self.assertNotIn("temperature", link["link_sensor"])
         self.assertNotIn("humidity", link["link_sensor"])
 
+    def assertLinkDrivesTheVanes(self, merged):
+        # serin_link reports a vane axis to the Link only when that axis's
+        # select is bound. Unbound, the Link shows no airflow direction
+        # control although the heat pump has one.
+        # The board configs add the ids with `id: !extend hp`, which ESPHome
+        # resolves in the pass after the package merge.
+        resolve_extend_remove(merged)
+        climates = [c for c in merged["climate"] if c.get("id") == "hp"]
+        self.assertEqual(len(climates), 1, "the override must extend the package's climate")
+        self.assertEqual(len(merged["climate"]), 1)
+        climate = climates[0]
+        link = merged["serin_link"]
+        for axis, key in (("vertical", "vane_v_select"), ("horizontal", "vane_h_select")):
+            select = climate[f"{axis}_vane_select"]
+            self.assertIn("id", select, f"{axis} vane select has no id to bind")
+            self.assertEqual(link.get(key), select["id"])
+            # The override must add the id, not replace the select.
+            self.assertIn("name", select)
+
     def test_local_build_never_fetches_shared_packages_from_main(self):
         for board, hardware in BOARDS.items():
             with self.subTest(board=board):
@@ -53,6 +73,7 @@ class PackageRevisionTests(unittest.TestCase):
                 self.assertIn("esp32_ble_tracker", merged)
                 self.assertTrue(merged["bluetooth_proxy"]["active"])
                 self.assertLinkIsItsOwnDevice(merged)
+                self.assertLinkDrivesTheVanes(merged)
 
     def test_dashboard_import_resolves_includes_inside_the_selected_revision(self):
         for board in BOARDS:
@@ -74,6 +95,7 @@ class PackageRevisionTests(unittest.TestCase):
                 self.assertTrue(merged["serin_link"]["link_ota_credentials"])
                 self.assertEqual(merged["wifi"]["ap"]["password"], "serinlabs")
                 self.assertLinkIsItsOwnDevice(merged)
+                self.assertLinkDrivesTheVanes(merged)
 
 
 if __name__ == "__main__":

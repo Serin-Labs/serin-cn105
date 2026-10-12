@@ -12,8 +12,20 @@ esphome:
     - id: link1
       name: "Serin Link 1"
 
+# The Link shows an airflow direction control only for a vane select that is
+# bound to it. The ids are added here rather than in common/cn105.yaml because
+# the site's YAML generator writes its own ids onto that file's selects.
+climate:
+  - id: !extend hp
+    vertical_vane_select:
+      id: vane_v
+    horizontal_vane_select:
+      id: vane_h
+
 serin_link:
   link_devices: [link1]
+  vane_v_select: vane_v
+  vane_h_select: vane_h
 
 logger:
   level: INFO
