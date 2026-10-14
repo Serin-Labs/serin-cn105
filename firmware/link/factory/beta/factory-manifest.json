@@ -1,6 +1,6 @@
 {
   "name": "Serin Link (factory)",
-  "version": "0.1.11-beta.1",
+  "version": "0.2.1-beta.1",
   "channel": "beta",
   "dirty": false,
   "builds": [
@@ -8,12 +8,12 @@
       "board": "viewe15",
       "path": "serin_link_viewe15_factory.bin",
       "size": 2887680,
-      "sha256": "a5e7ac8f225f54ea4f6788c9084f599b1d656f5cdbc89793c7e9d8b73037a26c",
+      "sha256": "941a5ae6e2ae675ecd5b44170045380322a20ccdfc18e0753272e78e51585e22",
       "parts": [
         {
           "path": "serin_link_viewe15_bootloader.bin",
           "offset": 0,
-          "sha256": "fe106747d9d8887178fa27fd675ea9752818330461d3377b8255fa25ebb76715"
+          "sha256": "1fc1144bb95cb5cfb9da419893ea78714388c407badf0b0d8e656723baceed37"
         },
         {
           "path": "serin_link_viewe15_partition-table.bin",
@@ -28,7 +28,7 @@
         {
           "path": "serin_link_viewe15_app.bin",
           "offset": 131072,
-          "sha256": "c09f6aaef5dc511555cd4398cf7a825a328e81fa5b4aa0c91f56cfc7f602568c"
+          "sha256": "0f313753fda1b2ed5576383169e9b4839fa21a2a6ec45c230b239d18173ceb15"
         }
       ]
     },
@@ -36,12 +36,12 @@
       "board": "viewe21",
       "path": "serin_link_viewe21_factory.bin",
       "size": 2822144,
-      "sha256": "4ff5263b64e6a357fbb6439eb1daf23554c711df96a1f932ebdf083e6664e419",
+      "sha256": "f7a7202a634f13bb7e80f19c428f18d074cfe6f97f5aa41d5b479178ce6400c9",
       "parts": [
         {
           "path": "serin_link_viewe21_bootloader.bin",
           "offset": 0,
-          "sha256": "05ca6588ee88734fcc47e092fcdd1455c6c70b151d1370f2d2f84b09a779277d"
+          "sha256": "12b035cc9b0144d1dff164ef38d3125eeab0c4b1752ca572f296e1542f2bc1b8"
         },
         {
           "path": "serin_link_viewe21_partition-table.bin",
@@ -56,7 +56,7 @@
         {
           "path": "serin_link_viewe21_app.bin",
           "offset": 131072,
-          "sha256": "0e6f710c5340d1a578963da3dcae7527268a297978787beae7292b462337dddd"
+          "sha256": "46a3f45220c4ec662cce0d73f42a2587d12b0b5138dba928d0a52226f80d874b"
         }
       ]
     }
