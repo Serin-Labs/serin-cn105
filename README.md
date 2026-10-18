@@ -207,7 +207,18 @@ contract to cover remote assets.
 
 The ESPHome configurations in `esphome/` and the documentation in `docs/` are [MIT licensed](LICENSE).
 
-`firmware/` redistributes builds produced by other projects and is not covered by that grant. The HomeKit binaries are built from [mitsubishi-cn105-homekit](https://github.com/akifbayram/mitsubishi-cn105-homekit) (MIT); the Matter and Serin Link images are built from closed sources and are published here for installation and OTA delivery only.
+`firmware/` redistributes builds produced by other projects and is not covered by that grant. The HomeKit binaries are built from [mitsubishi-cn105-homekit](https://github.com/akifbayram/mitsubishi-cn105-homekit) (MIT); the Matter images are built from closed sources and are published here for installation and OTA delivery only.
+
+Serin Link firmware source is public at
+[Serin-Labs/serin-link](https://github.com/Serin-Labs/serin-link). Its
+project-authored code is GPL-3.0-only; imported code, fonts, and SDK components
+retain their upstream licenses. See its
+[license and source scope](https://github.com/Serin-Labs/serin-link#license-and-source-scope)
+and [third-party inventory](https://github.com/Serin-Labs/serin-link/blob/main/docs/THIRD_PARTY.md).
+Each distributed Link image needs matching source and build information for
+that release. The current public checkout does not by itself establish the
+source match or licensing of every historical prebuilt image here. PCB and
+stand design sources are not included in the firmware source publication.
 
 ## Related Repositories
 
