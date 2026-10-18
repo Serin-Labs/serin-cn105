@@ -4,9 +4,9 @@
 No arguments scans both manifest.json and factory-manifest.json under firmware/.
 ESP Web Tools builds retain the app hash and require hashes for every part of
 a multipart image. A single merged image can use its build hash. Link OTA and
-factory images require the pinned signer and embedded version. A factory build
-may also list split parts for USB installs that keep the settings partition;
-those must reassemble to the merged image byte for byte.
+factory images require the pinned signer, embedded version and board identity.
+A factory build may also list split parts for USB installs that keep the settings
+partition; those must reassemble to the merged image byte for byte.
 """
 import argparse
 import contextlib
@@ -45,6 +45,8 @@ LINK_PARTITIONS = {
 FACTORY_PART_LIMITS = {0: 0x8000, 0x8000: 0x1000, 0xf000: 0x2000, 0x20000: 0x400000}
 FACTORY_CHANNEL_DIRS = {"link/factory-manifest.json": "stable",
                         "link/factory/beta/factory-manifest.json": "beta"}
+LINK_PROJECTS = {"link15": "serin_link_viewe15", "link21": "serin_link_viewe21",
+                 "viewe15": "serin_link_viewe15", "viewe21": "serin_link_viewe21"}
 
 
 def require(condition, message):
@@ -100,7 +102,7 @@ def check_esp_image(data):
     return image
 
 
-def check_link_app(data, version):
+def check_link_app(data, version, board):
     require(8192 <= len(data) <= 0x400000 and len(data) % 4096 == 0,
             "signature: app must fit a 4 MiB OTA slot and have a complete signature sector")
     sector = data[-4096:]
@@ -132,9 +134,16 @@ def check_link_app(data, version):
     raw, terminator, _ = desc[16:48].partition(b"\0")
     require(raw and terminator, "version: descriptor version is empty or unterminated")
     require(raw.decode("ascii") == version, "version: embedded app version differs from manifest")
+    raw, terminator, _ = desc[48:80].partition(b"\0")  # char project_name[32]
+    require(raw and terminator, "project: descriptor project name is empty or unterminated within 32 bytes")
+    require(raw.isascii(), "project: descriptor project name must be ASCII")
+    project = raw.decode("ascii")
+    require(project == LINK_PROJECTS[board],
+            f"project: embedded app project {project!r} differs from board {board!r} "
+            f"({LINK_PROJECTS[board]!r})")
 
 
-def check_factory(data, version):
+def check_factory(data, version, board):
     require(0x22000 <= len(data) <= 0x420000, "factory size does not fit the ota_0 layout")
     check_esp_image(data[:0x8000])
     table = data[0x8000:0x8c00]
@@ -157,7 +166,7 @@ def check_factory(data, version):
         partitions[name] = (typ, sub, start, size, flags)
     require(checksum_found and partitions == LINK_PARTITIONS,
             "partition layout differs from the supported Link layout (offsets, sizes, types or flags)")
-    check_link_app(data[0x20000:], version)
+    check_link_app(data[0x20000:], version, board)
 
 
 def check_factory_parts(parts, parent, merged):
@@ -239,14 +248,14 @@ def check_link_build(build, parent, version, kind):
     check_hash(data, build["sha256"])
     files = {path}
     if kind == "factory":
-        check_factory(data, version)
+        check_factory(data, version, board)
         if "parts" in build:
             parts = check_factory_parts(build["parts"], parent, data)
             require(path not in parts, "duplicate part path")
             files |= parts
     else:
-        check_link_app(data, version)
-    print(f"  ok  {board}: size, sha256, signature and embedded version"
+        check_link_app(data, version, board)
+    print(f"  ok  {board}: size, sha256, signature, embedded version and board"
           + (", split parts" if len(files) > 1 else ""))
     return files
 

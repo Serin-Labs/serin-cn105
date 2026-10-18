@@ -36,7 +36,9 @@ class ManifestTests(unittest.TestCase):
                 serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))
             (cls.keys / f"{name}.pub").write_bytes(key.public_key().public_bytes(
                 serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo))
-        cls.app = cls.make_app()
+        cls.apps = {"viewe15": cls.make_app(project=b"serin_link_viewe15"),
+                    "viewe21": cls.make_app(project=b"serin_link_viewe21")}
+        cls.app = cls.apps["viewe15"]
         cls.wrong_app = cls.make_app(key="wrong")
         cls.next_app = cls.make_app(version=b"0.1.7")
         image = ESP32S3FirmwareImage()
@@ -45,9 +47,9 @@ class ManifestTests(unittest.TestCase):
         cls.bootloader = (cls.keys / "boot.bin").read_bytes()
 
     @classmethod
-    def make_app(cls, version=b"0.1.6", key="release"):
+    def make_app(cls, version=b"0.1.6", key="release", project=b"serin_link_viewe15"):
         desc = struct.pack("<IIII32s32s16s16s32s32s80x", 0xABCD5432, 0, 0, 0,
-                           version, b"serin_link", b"12:00:00", b"Sep 18 2026", b"v5.5.4", bytes(32))
+                           version, project, b"12:00:00", b"Sep 18 2026", b"v5.5.4", bytes(32))
         image = ESP32S3FirmwareImage()
         image.segments = [ImageSegment(0x3c000020, desc)]
         image.save(str(cls.keys / "unsigned.bin"))
@@ -93,17 +95,17 @@ class ManifestTests(unittest.TestCase):
         path.write_text(json.dumps(manifest))
         return path, manifest
 
-    def write_link(self, factory=False, data=None):
+    def write_link(self, factory=False, data=None, board="viewe15"):
         folder = self.root / "firmware/link"
         if not factory:
             folder /= "ota/stable"
         folder.mkdir(parents=True, exist_ok=True)
         if data is None:
-            data = self.factory_bytes() if factory else self.app
+            data = self.factory_bytes(self.apps[board]) if factory else self.apps[board]
         asset = "factory.bin" if factory else "link15-app.bin"
         (folder / asset).write_bytes(data)
         manifest = {"name": "Link", "version": "0.1.6", "builds": [{
-            "board": "viewe15" if factory else "link15", "path": asset,
+            "board": board if factory else {"viewe15": "link15", "viewe21": "link21"}[board], "path": asset,
             "size": len(data), "sha256": hashlib.sha256(data).hexdigest()}]}
         if factory:
             manifest["dirty"] = False
@@ -208,6 +210,40 @@ class ManifestTests(unittest.TestCase):
                 with self.subTest(factory=factory, reason=reason):
                     self.write_link(factory=factory, data=self.factory_bytes(app) if factory else app)
                     self.rejects(contains=reason)
+
+    def test_board_specific_images_validate_for_each_ota_and_factory_board(self):
+        for factory in (False, True):
+            for board in ("viewe15", "viewe21"):
+                with self.subTest(factory=factory, board=board):
+                    path, _ = self.write_link(factory=factory, board=board)
+                    code, output = self.run_check(path)
+                    self.assertEqual(code, 0, output)
+
+    def test_signed_app_project_must_match_manifest_board_after_hash_passes(self):
+        # Both images have trusted signatures, valid ESP checksums and the
+        # manifest's version: only the signed board identity is wrong.
+        for factory in (False, True):
+            for target, actual in (("viewe15", "viewe21"), ("viewe21", "viewe15")):
+                with self.subTest(factory=factory, target=target):
+                    app = self.apps[actual]
+                    path, _ = self.write_link(factory=factory, board=target,
+                                              data=self.factory_bytes(app) if factory else app)
+                    self.rejects(path, contains="project")
+
+    def test_project_name_must_be_specific_ascii_and_terminated(self):
+        cases = {"generic": b"serin_link", "empty": b"", "unknown": b"serin_link_viewe15_extra",
+                 "non-ASCII": b"serin_link_viewe15\xff", "unterminated": b"serin_link_viewe15" + b"x" * 14}
+        for name, project in cases.items():
+            app = self.make_app(project=project)
+            for factory in (False, True):
+                with self.subTest(factory=factory, project=name):
+                    path, _ = self.write_link(factory=factory,
+                                              data=self.factory_bytes(app) if factory else app)
+                    self.rejects(path, contains="project")
+
+    def test_factory_split_parts_do_not_bypass_board_check(self):
+        path, _ = self.write_factory_parts(data=self.factory_bytes(self.apps["viewe21"]))
+        self.rejects(path, contains="project")
 
     def test_signature_must_be_at_the_offset_used_by_the_device(self):
         unsigned = self.keys / "overpadded.bin"
