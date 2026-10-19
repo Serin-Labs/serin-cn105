@@ -108,6 +108,11 @@ distribution checkout; missing tools stop the job rather than bypassing the
 check. Their host-test CI pins an immutable validator revision that has been landed
 on `main`.
 
+For Link validator changes, update the immutable distribution commit pinned in
+`serin-link/.github/workflows/ci.yml` to the companion validator commit. Land
+that exact commit on this repo's `main` by fast-forward before merging the Link
+pin update; squashing or rebasing the companion would change its SHA.
+
 The producer workflows permit publication only from version tags (`v*`).
 Manual branch runs build downloadable artifacts without publishing. Pushes
 get at most three attempts; a failed rebase or validation stops immediately.
@@ -199,8 +204,22 @@ manifest directory.
 | Format | Required build fields | Artifact checks |
 | --- | --- | --- |
 | ESP Web Tools | `board`, `chipFamily`, app `sha256`, nonempty `parts` of `{path, offset, sha256}` | Board/family match; sector-aligned, nonoverlapping parts within board flash capacity; SHA-256 of every part and of the app |
-| Link plaintext OTA | `board` (`link15`/`link21`), `path`, `size`, `sha256` | Actual size and hash; valid ESP32-S3 image; first RSA signature matches the pinned production key; embedded version matches the manifest; fits a 4 MiB OTA slot |
-| Link factory | `board` (`viewe15`/`viewe21`), `path`, `size`, `sha256`; optional `parts` of `{path, offset, sha256}` | Actual size and hash; bootloader image checksums; partition-table checksum and exact supported layout; signed app at `0x20000` with matching version. With `parts`: exactly the offsets `0x0`, `0x8000`, `0xf000`, `0x20000`; SHA-256 of every part; no part reaches past its region; the `0xf000` part is a full blank otadata partition; the parts plus `0xFF` fill equal the merged image |
+| Link plaintext OTA | `board` (`link15`/`link21`), `path`, `size`, `sha256` | Actual size and hash; valid ESP32-S3 image; first RSA signature matches the pinned production key; embedded version and project name match the manifest version and board; fits a 4 MiB OTA slot |
+| Link factory | `board` (`viewe15`/`viewe21`), `path`, `size`, `sha256`; optional `parts` of `{path, offset, sha256}` | Actual size and hash; bootloader image checksums; partition-table checksum and exact supported layout; signed app at `0x20000` with matching version and board project name. With `parts`: exactly the offsets `0x0`, `0x8000`, `0xf000`, `0x20000`; SHA-256 of every part; no part reaches past its region; the `0xf000` part is a full blank otadata partition; the parts plus `0xFF` fill equal the merged image |
+
+Link app descriptors must contain a nonempty ASCII project name terminated by
+a null byte within the 32-byte `project_name` field. The required value is
+`serin_link_viewe15` for `link15` OTA or `viewe15` factory builds, and
+`serin_link_viewe21` for `link21` OTA or `viewe21` factory builds. A valid
+signature and matching file hash do not permit a different board identity.
+This applies to merged factory images with or without split parts.
+
+Generic `serin_link` project names in older archives cannot establish the
+board, so current validation rejects their publication regardless of version.
+Current Link staging also rejects those archives through `--split-existing`;
+rebuild with the board-specific project name to publish them. Existing history
+is unchanged. The dial's separate OTA policy still permits legacy generic
+images for migration; that compatibility does not relax the release gate.
 
 Factory manifests live at `firmware/link/factory-manifest.json` (stable) and
 `firmware/link/factory/beta/factory-manifest.json` (`channel: "beta"`, pre-release
@@ -246,9 +265,9 @@ part hashes for existing published files, validate the full distribution, and
 confirm the public mirror serves those manifests before deploying the strict
 browser check. No firmware bytes or release versions change in that migration.
 
-These checks do not establish physical board identity from a signed app,
-prove bootloader/app compatibility, perform a hardware boot test, or validate
-network availability of update URLs.
+These checks compare the signed project's declared board identity with the
+manifest. They do not prove hardware or bootloader/app compatibility, perform
+a hardware boot test, or validate network availability of update URLs.
 
 For this rollout, physical acceptance is limited to Link 1.5 and NanoC6.
 Link 2.1 and AtomS3 Lite receive build and automated checks only, by the
