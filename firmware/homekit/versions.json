@@ -8,11 +8,11 @@
       "builds": {
         "m5atoms3-lite": {
           "path": "archive/0.2.9-beta.4/m5atoms3-lite/firmware.bin",
-          "sha256": "5cc98e93ed5bc78e8029023aac1010d9db2c414332edd0372a1e9916ca7f9761"
+          "sha256": "3a728ac99ceee94e4369a3b368da57764386b52e144d1881e28d3729b2776ec6"
         },
         "nanoc6": {
           "path": "archive/0.2.9-beta.4/nanoc6/firmware.bin",
-          "sha256": "05c8d3f7789439e57d17e302b23bca10b269dbd3c43c9887bd706453000a2352"
+          "sha256": "3dbae514ce8330bf30520d6c946f647d85fed0d406086fb4a3c5aee2857d051a"
         }
       }
     },
