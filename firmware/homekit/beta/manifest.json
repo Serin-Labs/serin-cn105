@@ -1,30 +1,30 @@
 {
   "name": "Mitsubishi HomeKit Controller",
-  "version": "0.2.9-beta.4",
+  "version": "0.2.9-beta.5",
   "channel": "beta",
-  "release_url": "https://github.com/akifbayram/mitsubishi-cn105-homekit/releases/tag/v0.2.9-beta.4",
+  "release_url": "https://github.com/akifbayram/mitsubishi-cn105-homekit/releases/tag/v0.2.9-beta.5",
   "new_install_prompt_erase": true,
   "builds": [
     {
       "chipFamily": "ESP32-C6",
       "board": "nanoc6",
-      "sha256": "3dbae514ce8330bf30520d6c946f647d85fed0d406086fb4a3c5aee2857d051a",
+      "sha256": "40060e4478a32e72fbd3b18d2c36c2a3ed0068776593adba08c1d948fd8e8e1a",
       "parts": [
-        { "path": "nanoc6/bootloader.bin", "offset": 0, "sha256": "907160a6fb61c9167684dffb89a68ac19167e244e7156e343cbf8f544f5473c7" },
+        { "path": "nanoc6/bootloader.bin", "offset": 0, "sha256": "203fe2f7b0ca6f4c6e35c83d632baaf4bb4e53f3dc37ad9afb458d741bfd74c2" },
         { "path": "nanoc6/partitions.bin", "offset": 32768, "sha256": "69ced06a47be3589648c2477274e165802801c1e730fd80ba0c79beef4175c86" },
         { "path": "nanoc6/boot_app0.bin", "offset": 57344, "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f" },
-        { "path": "nanoc6/firmware.bin", "offset": 65536, "sha256": "3dbae514ce8330bf30520d6c946f647d85fed0d406086fb4a3c5aee2857d051a" }
+        { "path": "nanoc6/firmware.bin", "offset": 65536, "sha256": "40060e4478a32e72fbd3b18d2c36c2a3ed0068776593adba08c1d948fd8e8e1a" }
       ]
     },
     {
       "chipFamily": "ESP32-S3",
       "board": "m5atoms3-lite",
-      "sha256": "3a728ac99ceee94e4369a3b368da57764386b52e144d1881e28d3729b2776ec6",
+      "sha256": "2f38c8142fefea67b7908008aa20f57e37e9fb1a562769c348b4acf0ad79be25",
       "parts": [
-        { "path": "m5atoms3-lite/bootloader.bin", "offset": 0, "sha256": "e92c88144edd88e08ce15259d13a6663db1ede05b1d6505a5e2add8d7a782584" },
+        { "path": "m5atoms3-lite/bootloader.bin", "offset": 0, "sha256": "d456de1a796ba09606784078a631e836147dc041453197a7284d4a585b2dd16a" },
         { "path": "m5atoms3-lite/partitions.bin", "offset": 32768, "sha256": "ece4c6bf54eac584135cc3c0071d9b57b6cd7ad6eaeeda14e4f380f6ea7bd990" },
         { "path": "m5atoms3-lite/boot_app0.bin", "offset": 57344, "sha256": "7d2c7ac4888bfd75cd5f56e8d61f69595121183afc81556c876732fd3782c62f" },
-        { "path": "m5atoms3-lite/firmware.bin", "offset": 65536, "sha256": "3a728ac99ceee94e4369a3b368da57764386b52e144d1881e28d3729b2776ec6" }
+        { "path": "m5atoms3-lite/firmware.bin", "offset": 65536, "sha256": "2f38c8142fefea67b7908008aa20f57e37e9fb1a562769c348b4acf0ad79be25" }
       ]
     }
   ]

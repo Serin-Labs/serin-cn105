@@ -2,6 +2,21 @@
   "name": "Mitsubishi HomeKit Controller",
   "versions": [
     {
+      "version": "0.2.9-beta.5",
+      "date": "2026-11-02",
+      "release_url": "https://github.com/akifbayram/mitsubishi-cn105-homekit/releases/tag/v0.2.9-beta.5",
+      "builds": {
+        "m5atoms3-lite": {
+          "path": "archive/0.2.9-beta.5/m5atoms3-lite/firmware.bin",
+          "sha256": "2f38c8142fefea67b7908008aa20f57e37e9fb1a562769c348b4acf0ad79be25"
+        },
+        "nanoc6": {
+          "path": "archive/0.2.9-beta.5/nanoc6/firmware.bin",
+          "sha256": "40060e4478a32e72fbd3b18d2c36c2a3ed0068776593adba08c1d948fd8e8e1a"
+        }
+      }
+    },
+    {
       "version": "0.2.9-beta.4",
       "date": "2026-10-26",
       "release_url": "https://github.com/akifbayram/mitsubishi-cn105-homekit/releases/tag/v0.2.9-beta.4",
