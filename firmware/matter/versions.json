@@ -2,6 +2,21 @@
   "name": "Mitsubishi Matter Controller",
   "versions": [
     {
+      "version": "0.7.0-beta.2",
+      "date": "2026-11-05",
+      "release_url": "https://github.com/Serin-Labs/serin-cn105/tree/main/firmware/matter/archive/0.7.0-beta.2",
+      "builds": {
+        "m5atoms3-lite": {
+          "path": "archive/0.7.0-beta.2/m5atoms3-lite/firmware.bin",
+          "sha256": "0b50f59bb0ecb88c554f78b251c6349fef0b09329b74997775da6f54afbb5d25"
+        },
+        "nanoc6": {
+          "path": "archive/0.7.0-beta.2/nanoc6/firmware.bin",
+          "sha256": "6e775e1c011d953fca2de19586db9b9098998c8872f96dec34ceb18521c82a71"
+        }
+      }
+    },
+    {
       "version": "0.7.0-beta.1",
       "date": "2026-10-27",
       "release_url": "https://github.com/Serin-Labs/serin-cn105/tree/main/firmware/matter/archive/0.7.0-beta.1",
