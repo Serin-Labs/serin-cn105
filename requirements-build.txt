@@ -2,7 +2,7 @@
 # Exact versions from the environment used for both board builds.
 # Used as constraints by requirements.txt; refresh in a fresh environment.
 # See README.md for the update and verification procedure.
-aioesphomeapi==45.7.0
+aioesphomeapi==46.6.0
 aiohappyeyeballs==2.7.1
 ajsonrpc==1.2.0
 annotated-types==0.8.0
