@@ -16,7 +16,7 @@ from esphome.core import CORE
 
 ROOT = Path(__file__).resolve().parents[1]
 BOARDS = {"esp32c6": "esp32-c6-devkitm-1", "esp32s3": "esp32-s3-devkitc-1"}
-LINK_DEVICE = {"id": "link1", "name": "Serin Link 1"}
+LINK_DEVICE = {"id": "link1", "name": "Serin Link 1", "relation": "via"}
 
 
 class PackageRevisionTests(unittest.TestCase):
