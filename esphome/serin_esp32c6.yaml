@@ -11,6 +11,7 @@ esphome:
   devices:
     - id: link1
       name: "Serin Link 1"
+      relation: via
 
 # The Link shows an airflow direction control only for a vane select that is
 # bound to it. The ids are added here rather than in common/cn105.yaml because
@@ -40,7 +41,7 @@ dashboard_import:
   import_full_config: false
 
 external_components:
-  - source: github://echavet/MitsubishiCN105ESPHome@29133a9b84d826f6a6e9a3025f9c556460b0e0f8
+  - source: github://echavet/MitsubishiCN105ESPHome@5250ba782c261ae98fe54abd2475ae7ea7836475
   - source: github://Serin-Labs/serin-link-core@290f2a6d8946bed179231559800f8d5f742bc6f4
     components: [serin_link]
 

@@ -73,7 +73,7 @@ bluetooth_proxy: !remove
 
 ### Link updates through an ESPHome controller
 
-The official board configurations require ESPHome **2026.7.4 or newer**.
+The official board configurations require ESPHome **2026.11.0 or newer**.
 Both enable `serin_link.link_ota_credentials`
 in the shared CN105 package. After installing a build with this setting and
 connecting the controller to Wi-Fi, a bonded Link can use
@@ -127,7 +127,7 @@ components use these tested revisions:
 
 | Component | Revision |
 | --- | --- |
-| MitsubishiCN105ESPHome | `29133a9b84d826f6a6e9a3025f9c556460b0e0f8` |
+| MitsubishiCN105ESPHome | `5250ba782c261ae98fe54abd2475ae7ea7836475` |
 | serin-link-core | `290f2a6d8946bed179231559800f8d5f742bc6f4` (`v0.1.5`) |
 
 Shared YAML uses relative `!include` paths, so local builds and dashboard
