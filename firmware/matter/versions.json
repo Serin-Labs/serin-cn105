@@ -1,0 +1,80 @@
+{
+  "name": "Mitsubishi Matter Controller",
+  "versions": [
+    {
+      "version": "0.7.0-beta.3",
+      "date": "2026-11-08",
+      "release_url": "https://github.com/Serin-Labs/serin-cn105/tree/main/firmware/matter/archive/0.7.0-beta.3",
+      "builds": {
+        "m5atoms3-lite": {
+          "path": "archive/0.7.0-beta.3/m5atoms3-lite/firmware.bin",
+          "sha256": "7aa582545348dfbe3af12f9f713c95027f4e403db6c1dcf977e8bf4f2934b9da"
+        },
+        "nanoc6": {
+          "path": "archive/0.7.0-beta.3/nanoc6/firmware.bin",
+          "sha256": "256cf367c7844d1f81d5e1f4dd49d10f2b46fcb94a57c7e097778d67408f2376"
+        }
+      }
+    },
+    {
+      "version": "0.7.0-beta.2",
+      "date": "2026-11-05",
+      "release_url": "https://github.com/Serin-Labs/serin-cn105/tree/main/firmware/matter/archive/0.7.0-beta.2",
+      "builds": {
+        "m5atoms3-lite": {
+          "path": "archive/0.7.0-beta.2/m5atoms3-lite/firmware.bin",
+          "sha256": "0b50f59bb0ecb88c554f78b251c6349fef0b09329b74997775da6f54afbb5d25"
+        },
+        "nanoc6": {
+          "path": "archive/0.7.0-beta.2/nanoc6/firmware.bin",
+          "sha256": "6e775e1c011d953fca2de19586db9b9098998c8872f96dec34ceb18521c82a71"
+        }
+      }
+    },
+    {
+      "version": "0.7.0-beta.1",
+      "date": "2026-10-27",
+      "release_url": "https://github.com/Serin-Labs/serin-cn105/tree/main/firmware/matter/archive/0.7.0-beta.1",
+      "builds": {
+        "m5atoms3-lite": {
+          "path": "archive/0.7.0-beta.1/m5atoms3-lite/firmware.bin",
+          "sha256": "a40b8b969211d47b3153cde92ee55a32886e49932ec4376cea4c4ee75a5cffb7"
+        },
+        "nanoc6": {
+          "path": "archive/0.7.0-beta.1/nanoc6/firmware.bin",
+          "sha256": "33de79ca017e6ad62eee49136ed27af4f5a675e0d10072c0fe7a21b20952150e"
+        }
+      }
+    },
+    {
+      "version": "0.6.1",
+      "date": "2026-10-10",
+      "release_url": "https://github.com/Serin-Labs/serin-cn105/tree/main/firmware/matter/archive/0.6.1",
+      "builds": {
+        "m5atoms3-lite": {
+          "path": "archive/0.6.1/m5atoms3-lite/firmware.bin",
+          "sha256": "56f1d18a3d36896c3bbfe138ca12f0e7d3b5946ed5737048cde52b11dd6373d2"
+        },
+        "nanoc6": {
+          "path": "archive/0.6.1/nanoc6/firmware.bin",
+          "sha256": "86d1d493c0f8d057ae827eaeff90332432ac5de6a30180323078684c145e7ea2"
+        }
+      }
+    },
+    {
+      "version": "0.6.0-beta.2",
+      "date": "2026-10-08",
+      "release_url": "https://github.com/Serin-Labs/serin-cn105/tree/main/firmware/matter/archive/0.6.0-beta.2",
+      "builds": {
+        "m5atoms3-lite": {
+          "path": "archive/0.6.0-beta.2/m5atoms3-lite/firmware.bin",
+          "sha256": "be6f1c9d6e57e0e72e8818a0375fc3a1c1ad7cc59038aa84843bf9784b23ed43"
+        },
+        "nanoc6": {
+          "path": "archive/0.6.0-beta.2/nanoc6/firmware.bin",
+          "sha256": "9f71c100f292e3699627c399c5d7901c3422404a8359bc72b212b7ee8c08ec0f"
+        }
+      }
+    }
+  ]
+}

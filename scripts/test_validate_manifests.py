@@ -485,6 +485,285 @@ class ManifestTests(unittest.TestCase):
         path.write_text(json.dumps(manifest))
         self.rejects(path, contains="size")
 
+    HOMEKIT_URL = "https://github.com/akifbayram/mitsubishi-cn105-homekit/releases/tag/v{}"
+
+    @staticmethod
+    def homekit_image(version):
+        return f"homekit firmware {version}".encode()
+
+    def write_homekit_manifest(self, folder, version, channel="stable"):
+        """A nanoc6 multipart controller manifest in `folder` (four parts, as write_multipart)."""
+        board_dir = folder / "nanoc6"
+        board_dir.mkdir(parents=True, exist_ok=True)
+        parts = []
+        for name, offset in (("bootloader.bin", 0), ("partitions.bin", 32768),
+                             ("boot_app0.bin", 57344), ("firmware.bin", 65536)):
+            data = self.homekit_image(version) if name == "firmware.bin" else name.encode()
+            (board_dir / name).write_bytes(data)
+            parts.append({"path": f"nanoc6/{name}", "offset": offset, "sha256": hashlib.sha256(data).hexdigest()})
+        manifest = {"name": "Mitsubishi HomeKit Controller", "version": version, "channel": channel,
+                    "release_url": self.HOMEKIT_URL.format(version),
+                    "builds": [{"chipFamily": "ESP32-C6", "board": "nanoc6",
+                                "sha256": parts[-1]["sha256"], "parts": parts}]}
+        (folder / "manifest.json").write_text(json.dumps(manifest))
+        return manifest
+
+    def write_homekit(self, versions=("0.9.0",)):
+        """The stable manifest names versions[0]; every version gets an archived
+        firmware.bin and an index entry. Returns the index path and its content."""
+        folder = self.root / "firmware/homekit"
+        self.write_homekit_manifest(folder, versions[0])
+        index = {"name": "Mitsubishi HomeKit Controller", "versions": []}
+        for version in versions:
+            data = self.homekit_image(version)
+            path = f"archive/{version}/nanoc6/firmware.bin"
+            (folder / path).parent.mkdir(parents=True, exist_ok=True)
+            (folder / path).write_bytes(data)
+            index["versions"].append({
+                "version": version, "date": "2026-10-20", "release_url": self.HOMEKIT_URL.format(version),
+                "builds": {"nanoc6": {"path": path, "sha256": hashlib.sha256(data).hexdigest()}}})
+        path = folder / "versions.json"
+        path.write_text(json.dumps(index))
+        return path, index
+
+    def test_homekit_index_validates_and_archive_is_not_orphaned(self):
+        self.write_homekit(versions=("0.9.0", "0.8.0"))
+        code, output = self.run_check()
+        self.assertEqual(code, 0, output)
+        self.assertNotIn("not referenced", output)
+
+    def test_unindexed_archive_file_is_still_an_orphan_warning(self):
+        self.write_homekit()
+        stray = self.root / "firmware/homekit/archive/0.1.0/nanoc6/firmware.bin"
+        stray.parent.mkdir(parents=True)
+        stray.write_bytes(b"left behind")
+        code, output = self.run_check()
+        self.assertEqual(code, 0, output)
+        self.assertIn("0.1.0/nanoc6/firmware.bin: not referenced", output)
+
+    def test_index_archive_hash_is_checked(self):
+        self.write_homekit(versions=("0.9.0", "0.8.0"))
+        (self.root / "firmware/homekit/archive/0.8.0/nanoc6/firmware.bin").write_bytes(b"corrupted download")
+        self.rejects(contains="sha256 does not match")
+
+    def test_index_must_list_the_published_manifests(self):
+        path, index = self.write_homekit(versions=("0.9.0", "0.8.0"))
+        index["versions"].pop(0)
+        path.write_text(json.dumps(index))
+        self.rejects(contains="index is missing manifest version 0.9.0")
+
+    def test_index_must_list_the_beta_manifest_too(self):
+        path, index = self.write_homekit()
+        self.write_homekit_manifest(self.root / "firmware/homekit/beta", "0.9.1-beta.1", channel="beta")
+        self.rejects(contains="index is missing manifest version 0.9.1-beta.1")
+        # The beta image is archived and listed, so the same layout now passes.
+        data = self.homekit_image("0.9.1-beta.1")
+        archived = self.root / "firmware/homekit/archive/0.9.1-beta.1/nanoc6/firmware.bin"
+        archived.parent.mkdir(parents=True)
+        archived.write_bytes(data)
+        index["versions"].insert(0, {
+            "version": "0.9.1-beta.1", "date": "2026-10-21", "release_url": self.HOMEKIT_URL.format("0.9.1-beta.1"),
+            "builds": {"nanoc6": {"path": "archive/0.9.1-beta.1/nanoc6/firmware.bin",
+                                  "sha256": hashlib.sha256(data).hexdigest()}}})
+        path.write_text(json.dumps(index))
+        code, output = self.run_check()
+        self.assertEqual(code, 0, output)
+
+    def test_index_manifest_version_is_compared_exactly(self):
+        # 0.9 and 0.9.0 are the same release to cmpVer, but not the same string.
+        path, index = self.write_homekit()
+        index["versions"][0]["version"] = "0.9"
+        index["versions"][0]["builds"]["nanoc6"]["path"] = "archive/0.9/nanoc6/firmware.bin"
+        archived = self.root / "firmware/homekit/archive/0.9/nanoc6/firmware.bin"
+        archived.parent.mkdir(parents=True)
+        archived.write_bytes(self.homekit_image("0.9.0"))
+        path.write_text(json.dumps(index))
+        self.rejects(contains="index is missing manifest version 0.9.0")
+
+    def test_index_hash_must_match_the_manifest_app(self):
+        path, index = self.write_homekit(versions=("0.9.0", "0.8.0"))
+        other = b"other archived bytes"
+        (self.root / "firmware/homekit/archive/0.9.0/nanoc6/firmware.bin").write_bytes(other)
+        index["versions"][0]["builds"]["nanoc6"]["sha256"] = hashlib.sha256(other).hexdigest()
+        path.write_text(json.dumps(index))
+        self.rejects(contains="index hash for 0.9.0 nanoc6 does not match manifest")
+
+    def test_index_must_carry_every_board_the_manifest_publishes(self):
+        path, index = self.write_homekit()
+        manifest_path = self.root / "firmware/homekit/manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        s3 = self.root / "firmware/homekit/m5atoms3-lite"
+        s3.mkdir()
+        parts = []
+        for name, offset in (("bootloader.bin", 0), ("partitions.bin", 32768),
+                             ("boot_app0.bin", 57344), ("firmware.bin", 65536)):
+            (s3 / name).write_bytes(b"s3 " + name.encode())
+            parts.append({"path": f"m5atoms3-lite/{name}", "offset": offset,
+                          "sha256": hashlib.sha256(b"s3 " + name.encode()).hexdigest()})
+        manifest["builds"].append({"chipFamily": "ESP32-S3", "board": "m5atoms3-lite",
+                                   "sha256": parts[-1]["sha256"], "parts": parts})
+        manifest_path.write_text(json.dumps(manifest))
+        self.rejects(contains="index hash for 0.9.0 m5atoms3-lite does not match manifest")
+
+    def test_index_accepts_a_two_component_version(self):
+        self.write_homekit(versions=("0.9.0", "0.2"))
+        code, output = self.run_check()
+        self.assertEqual(code, 0, output)
+
+    def test_index_rejects_bad_entries(self):
+        def board(entry):
+            entry["builds"]["esp32-devkit"] = entry["builds"].pop("nanoc6")
+
+        def version(entry):
+            entry["version"] = "0.8.0-beta"  # a prerelease needs a number
+
+        def duplicate(entry):
+            index["versions"].append(copy.deepcopy(entry))
+
+        def path(entry):
+            entry["builds"]["nanoc6"]["path"] = "archive/0.8.0/firmware.bin"
+
+        def date(entry):
+            entry["date"] = "2026-13-01"
+
+        def release_url(entry):
+            entry["release_url"] = "http://github.com/akifbayram/mitsubishi-cn105-homekit/releases/tag/v0.8.0"
+
+        cases = [(board, "unknown board"), (version, "invalid index version"),
+                 (duplicate, "duplicate index version 0.8.0"),
+                 (path, "index path for 0.8.0 nanoc6 must be archive/0.8.0/nanoc6/firmware.bin"),
+                 (date, "real YYYY-MM-DD date"), (release_url, "release_url must be an HTTPS URL")]
+        for mutate, message in cases:
+            with self.subTest(case=mutate.__name__):
+                index_path, index = self.write_homekit(versions=("0.9.0", "0.8.0"))
+                mutate(index["versions"][1])
+                index_path.write_text(json.dumps(index))
+                self.rejects(contains=message)
+
+    def test_index_dates_must_be_strict_calendar_dates(self):
+        for value in ("2026-02-30", "20261020", "2026-1-20", "2026-10-20T00:00:00", " 2026-10-20",
+                      "２０２６-１０-２０", 20261020, None):
+            with self.subTest(date=value):
+                path, index = self.write_homekit()
+                index["versions"][0]["date"] = value
+                path.write_text(json.dumps(index))
+                self.rejects(contains="real YYYY-MM-DD date")
+        path, index = self.write_homekit()
+        index["versions"][0]["date"] = "2028-02-29"  # leap day
+        path.write_text(json.dumps(index))
+        code, output = self.run_check()
+        self.assertEqual(code, 0, output)
+
+    def test_index_release_url_is_required_and_https_without_credentials(self):
+        for value in (None, 7, "", "http://example.com", "ftp://example.com/x", "https://",
+                      "https://user:secret@github.com/akifbayram", "https://user@github.com/akifbayram"):
+            with self.subTest(release_url=value):
+                path, index = self.write_homekit()
+                index["versions"][0]["release_url"] = value
+                path.write_text(json.dumps(index))
+                self.rejects(contains="release_url must be an HTTPS URL")
+        path, index = self.write_homekit()
+        del index["versions"][0]["release_url"]
+        path.write_text(json.dumps(index))
+        self.rejects(contains="release_url must be an HTTPS URL")
+
+    def test_index_versions_must_follow_the_release_pattern(self):
+        for value in ("0", "0.9.0.1", "v0.9.0", "0.9.0-beta", "0.9.0-beta.", "0.9.0-1", "0.9.0-beta.1.2",
+                      "0.9.0 ", "", "../0.9.0", "0.9.0-dirty", 9, None, ["0.9.0"]):
+            with self.subTest(version=value):
+                path, index = self.write_homekit()
+                index["versions"][0]["version"] = value
+                path.write_text(json.dumps(index))
+                self.rejects(contains="invalid index version")
+        for value in ("1.0", "10.20.30", "0.9.1-beta.1", "0.9.1-rc.12"):
+            with self.subTest(version=value):
+                self.write_homekit(versions=("0.9.0", value))
+                code, output = self.run_check()
+                self.assertEqual(code, 0, output)
+
+    def test_index_shapes_report_errors_without_tracebacks(self):
+        def entry(**update):
+            def change(index):
+                index["versions"][0].update(update)
+            return change
+
+        def builds(value):
+            return entry(builds=value)
+
+        def build(**update):
+            def change(index):
+                index["versions"][0]["builds"]["nanoc6"].update(update)
+            return change
+
+        def top(**update):
+            return lambda index: index.update(update)
+
+        cases = [
+            ("name missing", lambda index: index.pop("name"), "name must be a nonempty string"),
+            ("name blank", top(name="  "), "name must be a nonempty string"),
+            ("name typed", top(name=[]), "name must be a nonempty string"),
+            ("versions empty", top(versions=[]), "versions must be a nonempty array"),
+            ("versions object", top(versions={}), "versions must be a nonempty array"),
+            ("versions missing", lambda index: index.pop("versions"), "versions must be a nonempty array"),
+            ("entry null", top(versions=[None]), "versions must be a nonempty array of objects"),
+            ("entry string", top(versions=["0.9.0"]), "versions must be a nonempty array of objects"),
+            ("builds empty", builds({}), "builds for 0.9.0 must be a nonempty object"),
+            ("builds array", builds([]), "builds for 0.9.0 must be a nonempty object"),
+            ("builds null", builds(None), "builds for 0.9.0 must be a nonempty object"),
+            ("build null", builds({"nanoc6": None}), "index build for 0.9.0 nanoc6 must be an object"),
+            ("build string", builds({"nanoc6": "archive/0.9.0/nanoc6/firmware.bin"}), "index build for 0.9.0 nanoc6 must be an object"),
+            ("path missing", lambda index: index["versions"][0]["builds"]["nanoc6"].pop("path"),
+             "must be archive/0.9.0/nanoc6/firmware.bin"),
+            ("path typed", build(path=7), "must be archive/0.9.0/nanoc6/firmware.bin"),
+            ("path traversal", build(path="archive/0.9.0/../0.9.0/nanoc6/firmware.bin"),
+             "must be archive/0.9.0/nanoc6/firmware.bin"),
+            ("sha missing", lambda index: index["versions"][0]["builds"]["nanoc6"].pop("sha256"),
+             "sha256 must be 64 lowercase hexadecimal characters"),
+            ("sha uppercase", build(sha256="A" * 64), "sha256 must be 64 lowercase hexadecimal characters"),
+            ("sha typed", build(sha256=7), "sha256 must be 64 lowercase hexadecimal characters"),
+        ]
+        for label, change, message in cases:
+            with self.subTest(case=label):
+                index_path, index = self.write_homekit()
+                change(index)
+                index_path.write_text(json.dumps(index))
+                self.rejects(contains=message)
+        index_path, _ = self.write_homekit()
+        for label, document in (("array", []), ("string", "text"), ("null", None), ("number", 1)):
+            with self.subTest(case=label):
+                index_path.write_text(json.dumps(document))
+                self.rejects(contains="index must be an object")
+
+    def test_index_archive_file_must_exist_and_be_nonempty(self):
+        archived = self.root / "firmware/homekit/archive/0.9.0/nanoc6/firmware.bin"
+        self.write_homekit()
+        archived.write_bytes(b"")
+        self.rejects(contains="is empty")
+        archived.unlink()
+        self.rejects(contains="missing")
+
+    def test_index_duplicate_json_keys_are_rejected(self):
+        path, _ = self.write_homekit()
+        path.write_text(path.read_text().replace('"date": "2026-10-20"', '"date": "2026-01-01", "date": "2026-10-20"'))
+        self.rejects(contains="duplicate JSON key")
+
+    def test_index_failure_names_the_index_and_exits_nonzero(self):
+        path, index = self.write_homekit()
+        index["versions"][0]["date"] = "soon"
+        path.write_text(json.dumps(index))
+        code, output = self.run_check()
+        self.assertEqual(code, 1, output)
+        self.assertIn(f"::error::{path}: ", output)
+
+    def test_explicit_manifests_do_not_discover_the_index(self):
+        path, index = self.write_homekit()
+        manifest = self.root / "firmware/homekit/manifest.json"
+        path.write_text("invalid JSON")
+        code, output = self.run_check(manifest)
+        self.assertEqual(code, 0, output)
+        self.assertNotIn("versions.json", output)
+        self.rejects()  # the scan finds the broken index
+
 
 if __name__ == "__main__":
     unittest.main()

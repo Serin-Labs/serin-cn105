@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Validate distribution manifests or explicit staged manifests before publishing.
 
-No arguments scans both manifest.json and factory-manifest.json under firmware/.
+No arguments scans both manifest.json and factory-manifest.json under firmware/,
+and every firmware/*/versions.json release index: its archived images must match
+the index hashes, and the index must list the version and app hash of each
+manifest beside it. Explicit staged manifests skip the index checks.
 ESP Web Tools builds retain the app hash and require hashes for every part of
 a multipart image. A single merged image can use its build hash. Link OTA and
 factory images require the pinned signer, embedded version and board identity.
@@ -10,6 +13,7 @@ partition; those must reassemble to the merged image byte for byte.
 """
 import argparse
 import contextlib
+import datetime
 import hashlib
 import io
 import json
@@ -45,6 +49,10 @@ LINK_PARTITIONS = {
 FACTORY_PART_LIMITS = {0: 0x8000, 0x8000: 0x1000, 0xf000: 0x2000, 0x20000: 0x400000}
 FACTORY_CHANNEL_DIRS = {"link/factory-manifest.json": "stable",
                         "link/factory/beta/factory-manifest.json": "beta"}
+# Release index entries: "0.2" is a real release, so two components are allowed.
+INDEX_VERSION = re.compile(r"[0-9]+(\.[0-9]+){1,2}(-[A-Za-z]+\.[0-9]+)?")
+INDEX_DATE = re.compile(r"([0-9]{4})-([0-9]{2})-([0-9]{2})")
+INDEX_MANIFESTS = ("manifest.json", "beta/manifest.json")
 LINK_PROJECTS = {"link15": "serin_link_viewe15", "link21": "serin_link_viewe21",
                  "viewe15": "serin_link_viewe15", "viewe21": "serin_link_viewe21"}
 
@@ -85,6 +93,13 @@ def asset_path(parent, value):
     require(path.is_file(), f"path is missing or not a file: {value}")
     require(path.stat().st_size > 0, f"path is empty: {value}")
     return path
+
+
+def release_url_field(value):
+    require(isinstance(value, str), "release_url must be an HTTPS URL")
+    url = urlsplit(value)
+    require(url.scheme == "https" and url.hostname and not url.username and not url.password,
+            "release_url must be an HTTPS URL without credentials")
 
 
 def check_hash(data, declared):
@@ -273,11 +288,7 @@ def validate_manifest(path, allow_dirty=False):
     if "new_install_prompt_erase" in manifest:
         require(type(manifest["new_install_prompt_erase"]) is bool, "new_install_prompt_erase must be a boolean")
     if "release_url" in manifest:
-        value = manifest["release_url"]
-        require(isinstance(value, str), "release_url must be an HTTPS URL")
-        url = urlsplit(value)
-        require(url.scheme == "https" and url.hostname and not url.username and not url.password,
-                "release_url must be an HTTPS URL without credentials")
+        release_url_field(manifest["release_url"])
     builds = manifest.get("builds")
     require(isinstance(builds, list) and builds and all(isinstance(b, dict) for b in builds),
             "builds must be a nonempty array of objects")
@@ -326,6 +337,77 @@ def validate_manifest(path, allow_dirty=False):
     return referenced
 
 
+def index_date(value, version):
+    message = f"index date for {version} must be a real YYYY-MM-DD date"
+    match = INDEX_DATE.fullmatch(value) if isinstance(value, str) else None
+    require(match, message)
+    try:
+        datetime.date(*map(int, match.groups()))
+    except ValueError:
+        raise ValueError(message) from None
+
+
+def check_index_entry(entry, version, parent):
+    index_date(entry.get("date"), version)
+    release_url_field(entry.get("release_url"))
+    builds = entry.get("builds")
+    require(isinstance(builds, dict) and builds, f"builds for {version} must be a nonempty object")
+    files = set()
+    for board, build in builds.items():
+        require(board in WEB_BOARDS, f"unknown board {board!r} in index entry {version}")
+        require(isinstance(build, dict), f"index build for {version} {board} must be an object")
+        expected = f"archive/{version}/{board}/firmware.bin"
+        require(build.get("path") == expected, f"index path for {version} {board} must be {expected}")
+        path = asset_path(parent, expected)
+        try:
+            check_hash(path.read_bytes(), build.get("sha256"))
+        except ValueError as error:
+            raise ValueError(f"{expected}: {error}") from error
+        files.add(path)
+    return files
+
+
+def check_index_manifest(index_dir, name, entries):
+    """The index must offer every release the manifest publishes, with the same app image."""
+    path = index_dir / name
+    if not path.is_file():
+        return
+    manifest = read_json(path)
+    require(isinstance(manifest, dict), f"{name} must be an object")
+    version, builds = manifest.get("version"), manifest.get("builds")
+    require(isinstance(version, str), f"{name} version must be a string")
+    require(version in entries, f"index is missing manifest version {version} ({name})")
+    require(isinstance(builds, list) and all(isinstance(b, dict) for b in builds),
+            f"{name} builds must be an array of objects")
+    for build in builds:
+        board = build.get("board")
+        require(isinstance(board, str), f"{name} board must be a string")
+        indexed = entries[version]["builds"].get(board)
+        require(indexed is not None and indexed.get("sha256") == build.get("sha256"),
+                f"index hash for {version} {board} does not match manifest")
+
+
+def validate_index(path):
+    """Check a release index and the archive images it lists; return those files."""
+    index = read_json(path)
+    require(isinstance(index, dict), "index must be an object")
+    require(isinstance(index.get("name"), str) and index["name"].strip(), "name must be a nonempty string")
+    versions = index.get("versions")
+    require(isinstance(versions, list) and versions and all(isinstance(e, dict) for e in versions),
+            "versions must be a nonempty array of objects")
+    entries, files = {}, set()
+    for entry in versions:
+        version = entry.get("version")
+        require(isinstance(version, str) and INDEX_VERSION.fullmatch(version), f"invalid index version {version!r}")
+        require(version not in entries, f"duplicate index version {version}")
+        entries[version] = entry
+        files |= check_index_entry(entry, version, path.parent)
+    for name in INDEX_MANIFESTS:
+        check_index_manifest(path.parent, name, entries)
+    print(f"  ok  {len(entries)} versions: dates, release URLs, archive sha256, manifest versions and app hashes")
+    return files
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("manifests", nargs="*", type=pathlib.Path, help="explicit staged manifests; default: scan firmware/")
@@ -333,6 +415,8 @@ def main():
     args = parser.parse_args()
     manifests = args.manifests or sorted(set(ROOT.glob("firmware/**/manifest.json")) |
                                         set(ROOT.glob("firmware/**/factory-manifest.json")))
+    # Release indexes are scanned with the whole tree, not with staged manifests.
+    indexes = [] if args.manifests else sorted(ROOT.glob("firmware/*/versions.json"))
     if not manifests:
         print("::error::no manifests found under firmware/")
         return 1
@@ -342,6 +426,13 @@ def main():
         try:
             referenced.update(validate_manifest(path, args.allow_dirty))
         except (OSError, ValueError, TypeError, KeyError, struct.error, FatalError) as error:
+            print(f"::error::{path}: {error}")
+            errors += 1
+    for path in indexes:
+        print(f"\n{path}")
+        try:
+            referenced.update(validate_index(path))
+        except (OSError, ValueError, TypeError, KeyError) as error:
             print(f"::error::{path}: {error}")
             errors += 1
     stray = 0
@@ -359,12 +450,15 @@ def main():
             else:
                 print(f"::warning::{orphan}: not referenced by any manifest")
     if errors:
-        print(f"FAILED: {errors} manifest(s) invalid")
+        print(f"FAILED: {errors} manifest(s) or index(es) invalid")
         return 1
     if stray:
         print(f"FAILED: {stray} unreferenced Link file(s); remove them or reference them from a manifest")
         return 1
-    print(f"OK: {len(manifests)} manifests validated")
+    summary = f"OK: {len(manifests)} manifests validated"
+    if indexes:
+        summary += f", {len(indexes)} version index(es) validated"
+    print(summary)
     return 0
 
 

@@ -21,8 +21,9 @@ The HomeKit firmware publishes on two channels:
 |---------|----------|--------------|
 | Stable | `firmware/homekit/manifest.json` | The web installer, and every device's update check by default |
 | Beta | `firmware/homekit/beta/manifest.json` | Devices with "Beta updates" switched on, and the installer's pre-release option |
+| Every release | `firmware/homekit/versions.json` | The device web UI's version menu, which lists and installs any archived release |
 
-Beta builds come from prerelease tags (`v0.2.6-beta.1`) and are written only into `firmware/homekit/beta/`. A stable release never touches that directory and a beta never touches stable, so the default install path is always the stable build. Only the newest beta is kept.
+Beta builds come from prerelease tags (`v0.2.6-beta.1`) and are written only into `firmware/homekit/beta/`. A stable release never touches that directory and a beta never touches stable, so the default install path is always the stable build. Only the newest beta is kept there; every release, stable and beta, is also archived under `firmware/homekit/archive/<version>/<board>/` and listed in `firmware/homekit/versions.json`.
 
 A device on the beta channel is offered whichever of the two manifests names the higher version. Once a stable release passes the beta it supersedes it, so testers roll back onto stable without a new beta being cut and cannot be stranded on an abandoned prerelease.
 
@@ -201,7 +202,10 @@ delta-compress, so history grows by roughly every release forever, and past
 250 MB the intended move is to publish binaries as GitHub Release assets and
 point manifests at them. Before that migration, verify CORS and any consumers'
 Range requirements on a throwaway release, and extend the local-file validation
-contract to cover remote assets.
+contract to cover remote assets. Moving the HomeKit archive would break the
+firmware's version menu: the browser fetches `versions.json` and the archived
+images itself, and Release asset downloads send no CORS headers, so the archive
+has to stay browser-fetchable from raw.githubusercontent.com.
 
 ## License
 

@@ -29,6 +29,7 @@ squash or rebase changes the SHA that pin names.
 |------|-------|-----------------|
 | `firmware/esphome/` | `.github/workflows/esphome-firmware.yml` in this repo | yes |
 | `firmware/homekit/`, `firmware/homekit/beta/` | `firmware-release.yml` in `akifbayram/mitsubishi-cn105-homekit` | yes |
+| `firmware/homekit/versions.json`, `firmware/homekit/archive/` | `firmware-release.yml` in `akifbayram/mitsubishi-cn105-homekit` (backfilled once by `scripts/backfill-homekit-archive.py`) | yes |
 | `firmware/matter/` | the private Matter repo's release workflow | yes |
 | `firmware/link/ota/stable/`, `firmware/link/ota/beta/` | `tools/publish_fw.py --distribution` in `Serin-Labs/serin-link`, run by hand; it stages files and never commits or pushes | yes |
 | `firmware/link/factory-manifest.json`, `firmware/link/factory/beta/` and their images | copied by hand from `serin-link`'s `publish_fw.py --factory [--channel beta]` output | yes |
